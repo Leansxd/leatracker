@@ -536,6 +536,7 @@ export default function App() {
         dateStr: formatDateDisplay(selectedDate),
         date: selectedDate,
         timestamp: Date.now(),
+        programId: activeProgram.id,
         programName: activeProgram.name,
         dayId: day.id,
         dayName: day.dayName,
@@ -603,6 +604,68 @@ export default function App() {
       activeProfileId,
       customPrograms,
       activeProgramId
+    ]
+  );
+
+  const handleDeleteLog = useCallback(
+    (id) => {
+      const logToDelete = logsHistoryRef.current.find((l) => l.id === id);
+      const nextLogs = logsHistoryRef.current.filter((l) => l.id !== id);
+      logsHistoryRef.current = nextLogs;
+      setLogsHistory(nextLogs);
+
+      let nextDailyMap = dailyDataMapRef.current;
+      if (logToDelete && logToDelete.date) {
+        const dayRecord = nextDailyMap[logToDelete.date];
+        if (dayRecord) {
+          const targetProgId = logToDelete.programId || activeProgram.id;
+          const currentCompletion = dayRecord.workoutCompleted;
+          let nextCompletion = {};
+
+          if (currentCompletion && typeof currentCompletion === 'object') {
+            nextCompletion = { ...currentCompletion };
+            delete nextCompletion[targetProgId];
+            if (logToDelete.programName) {
+              delete nextCompletion[logToDelete.programName];
+            }
+          }
+
+          nextDailyMap = {
+            ...nextDailyMap,
+            [logToDelete.date]: {
+              ...dayRecord,
+              workoutCompleted: nextCompletion
+            }
+          };
+          dailyDataMapRef.current = nextDailyMap;
+          setDailyDataMap(nextDailyMap);
+        }
+      }
+
+      const uid = userRef.current?.uid;
+      if (uid) {
+        saveUserData(uid, {
+          profiles,
+          activeProfileId,
+          customPrograms,
+          activeProgramId,
+          hiddenProgramIds,
+          dailyDataMap: nextDailyMap,
+          logsHistory: nextLogs
+        }).catch((err) => {
+          console.warn('Firestore veri kaydedilemedi:', err);
+        });
+      }
+
+      toast('🗑️ Antrenman kaydı silindi. Bu günü tekrar kaydedebilirsiniz.');
+    },
+    [
+      activeProgram.id,
+      profiles,
+      activeProfileId,
+      customPrograms,
+      activeProgramId,
+      hiddenProgramIds
     ]
   );
 
@@ -902,7 +965,7 @@ export default function App() {
         <HistoryAnalytics
           logs={logsHistory}
           weightLogs={weightLogsForChart}
-          onDeleteLog={(id) => setLogsHistory((prev) => prev.filter((l) => l.id !== id))}
+          onDeleteLog={handleDeleteLog}
           onExportData={() => {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ profiles, activeProfileId, customPrograms, activeProgramId, hiddenProgramIds, dailyDataMap, logsHistory }, null, 2));
             const anchor = document.createElement('a');
