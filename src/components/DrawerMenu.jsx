@@ -1,11 +1,12 @@
-import { Dumbbell, Utensils, Scale, History, User, LogOut, X, Timer } from 'lucide-react';
+import { Dumbbell, Utensils, Scale, History, User, LogOut, X, Timer, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
   { id: 'workout', label: 'İdman', icon: Dumbbell },
   { id: 'nutrition', label: 'Beslenme', icon: Utensils },
   { id: 'weight', label: 'Tartı', icon: Scale },
-  { id: 'history', label: 'Geçmiş', icon: History }
+  { id: 'history', label: 'Geçmiş', icon: History },
+  { id: 'ai', label: 'AI Koç & Analiz', icon: Sparkles }
 ];
 
 export default function DrawerMenu({ isOpen, onClose, activeTab, onTabChange, onOpenProfile, onOpenTimer, profileName, onLogout }) {

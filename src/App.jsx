@@ -9,9 +9,10 @@ import DailyMacroTracker from './components/DailyMacroTracker';
 import WeightChart from './components/WeightChart';
 import AuthScreen from './components/AuthScreen';
 import DrawerMenu from './components/DrawerMenu';
+import AIAnalyticsView from './components/AIAnalyticsView';
 import { useAuth } from './context/AuthContext';
 import { loadUserData, saveUserData } from './services/userData';
-import { Dumbbell, History, Scale, Utensils, ChevronLeft, ChevronRight, Calendar, Plus, Check, Layers, User, Menu, Flame, Droplets } from 'lucide-react';
+import { Dumbbell, History, Scale, Utensils, ChevronLeft, ChevronRight, Calendar, Plus, Check, Layers, User, Menu, Flame, Droplets, Sparkles } from 'lucide-react';
 
 const STORAGE_KEY_PROFILES = 'letracker_profiles_v3';
 const STORAGE_KEY_ACTIVE_PROFILE = 'letracker_active_profile_v3';
@@ -590,6 +591,15 @@ export default function App() {
               <User size={13} color="var(--primary)" />
               <span className="header-chip-text">{activeProfile.name}</span>
             </button>
+            <button
+              className={`header-chip ${activeTab === 'ai' ? 'active' : ''}`}
+              onClick={() => setActiveTab('ai')}
+              title="AI Koç & Analiz"
+              style={activeTab === 'ai' ? { borderColor: '#9333EA', background: 'rgba(147, 51, 234, 0.15)' } : {}}
+            >
+              <Sparkles size={13} color="#C084FC" />
+              <span className="header-chip-text" style={{ color: activeTab === 'ai' ? '#C084FC' : undefined }}>AI Koç</span>
+            </button>
           </div>
         </div>
       </header>
@@ -777,6 +787,17 @@ export default function App() {
         />
       )}
 
+      {activeTab === 'ai' && (
+        <AIAnalyticsView
+          profile={activeProfile}
+          logsHistory={logsHistory}
+          dailyDataMap={dailyDataMap}
+          selectedDate={selectedDate}
+          currentDayData={currentDayData}
+          activeProgram={activeProgram}
+        />
+      )}
+
       <RestTimer
         isOpen={isTimerOpen}
         onClose={() => setIsTimerOpen(false)}
@@ -840,6 +861,12 @@ export default function App() {
           onClick={() => setActiveTab('history')}
         >
           <History size={18} /> Geçmiş
+        </button>
+        <button
+          className={`bottom-nav-item ${activeTab === 'ai' ? 'active' : ''}`}
+          onClick={() => setActiveTab('ai')}
+        >
+          <Sparkles size={18} color={activeTab === 'ai' ? '#C084FC' : undefined} /> AI Koç
         </button>
       </nav>
     </div>
