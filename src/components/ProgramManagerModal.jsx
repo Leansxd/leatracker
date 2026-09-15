@@ -527,7 +527,7 @@ export default function ProgramManagerModal({
           </div>
         )}
 
-        {activeTab === 'custom' && (
+        {activeTab === 'custom' && (<>
           <form onSubmit={handleSaveCustom} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)' }}>
               <label style={{ fontSize: '0.78rem', color: 'var(--text-sub)', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
@@ -822,7 +822,7 @@ export default function ProgramManagerModal({
               );
             })()
           )}
-        )}
+        </>)}
         </div>
       </div>
     </div>
