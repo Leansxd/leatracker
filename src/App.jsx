@@ -10,6 +10,7 @@ import WeightChart from './components/WeightChart';
 import AuthScreen from './components/AuthScreen';
 import DrawerMenu from './components/DrawerMenu';
 import AIAnalyticsView from './components/AIAnalyticsView';
+import Toaster, { toast } from './components/Toaster';
 import { useAuth } from './context/AuthContext';
 import { loadUserData, saveUserData } from './services/userData';
 import { Dumbbell, History, Scale, Utensils, ChevronLeft, ChevronRight, Calendar, Plus, Check, Layers, User, Menu, Flame, Droplets, Sparkles } from 'lucide-react';
@@ -20,6 +21,7 @@ const STORAGE_KEY_CUSTOM_PROGRAMS = 'letracker_custom_programs_v3';
 const STORAGE_KEY_ACTIVE_PROGRAM = 'letracker_active_program_v3';
 const STORAGE_KEY_DAILY_DATA = 'letracker_daily_data_v2';
 const STORAGE_KEY_LOGS = 'letracker_logs_v2';
+const STORAGE_KEY_HIDDEN_PROGRAMS = 'letracker_hidden_programs_v1';
 
 const DEFAULT_PROFILES = [
   {
@@ -53,6 +55,62 @@ const getWeekdayForDate = (dateStr) => {
   return WEEKDAYS_TR[d.getDay()];
 };
 
+const REST_FALLBACK_DAY = {
+  id: 'rest_fallback',
+  dayName: 'DİNLENME GÜNÜ',
+  title: 'DİNLENME GÜNÜ',
+  isRest: true,
+  tips: 'Programda bugün için antrenman tanımlı değil. Dinlen, esne ve su tüketimine özen göster.',
+  exercises: []
+};
+
+const migrateDailyDataMap = (map) => {
+  if (!map || typeof map !== 'object') return {};
+  const next = {};
+  Object.keys(map).forEach((date) => {
+    const rec = map[date] || {};
+    const out = { ...rec };
+    const wd = rec.workoutData;
+    if (wd && typeof wd === 'object' && !Array.isArray(wd) && Object.keys(wd).every((k) => Array.isArray(wd[k]))) {
+      out.workoutData = { _legacy: { _legacy: wd } };
+    }
+    const ex = rec.extraExercises;
+    if (ex && typeof ex === 'object' && !Array.isArray(ex) && Object.keys(ex).every((k) => Array.isArray(ex[k]))) {
+      out.extraExercises = { _legacy: ex };
+    }
+    if (rec.workoutCompleted && typeof rec.workoutCompleted !== 'object') {
+      out.workoutCompleted = {
+        _legacy: {
+          completed: true,
+          lastWorkoutAt: rec.lastWorkoutAt,
+          completedSetsCount: rec.completedSetsCount,
+          totalVolumeKg: rec.totalVolumeKg
+        }
+      };
+    }
+    next[date] = out;
+  });
+  return next;
+};
+
+const getWorkoutSets = (dayRecord, progId, dayId, exId) => {
+  const wd = dayRecord?.workoutData || {};
+  const prog = wd[progId];
+  if (prog && prog[dayId] && Array.isArray(prog[dayId][exId])) return prog[dayId][exId];
+  const legacy = wd._legacy && wd._legacy._legacy;
+  if (legacy && Array.isArray(legacy[exId])) return legacy[exId];
+  return undefined;
+};
+
+const getDayExtraExercises = (dayRecord, progId, dayId) => {
+  const ex = dayRecord?.extraExercises || {};
+  const prog = ex[progId];
+  if (prog && Array.isArray(prog[dayId])) return prog[dayId];
+  const legacy = ex._legacy;
+  if (legacy && Array.isArray(legacy[dayId])) return legacy[dayId];
+  return [];
+};
+
 export default function App() {
   const { user, loading, logout } = useAuth();
   const getTodayStr = useCallback(() => toLocalDateStr(new Date()), []);
@@ -83,12 +141,20 @@ export default function App() {
     return saved || 'preset_chest_back_arms';
   });
 
+  const [hiddenProgramIds, setHiddenProgramIds] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_HIDDEN_PROGRAMS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const allPrograms = useMemo(() => {
-    return [...PRESET_PROGRAMS, ...customPrograms];
-  }, [customPrograms]);
+    const visiblePresets = PRESET_PROGRAMS.filter((p) => !hiddenProgramIds.includes(p.id));
+    const all = [...visiblePresets, ...customPrograms];
+    if (all.length === 0) return [...PRESET_PROGRAMS];
+    return all;
+  }, [customPrograms, hiddenProgramIds]);
 
   const activeProgram = useMemo(() => {
-    return allPrograms.find((p) => p.id === activeProgramId) || PRESET_PROGRAMS[0];
+    return allPrograms.find((p) => p.id === activeProgramId) || allPrograms[0];
   }, [allPrograms, activeProgramId]);
 
   const activeDays = useMemo(() => {
@@ -97,7 +163,7 @@ export default function App() {
 
   const [dailyDataMap, setDailyDataMap] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY_DAILY_DATA);
-    return saved ? JSON.parse(saved) : {};
+    return migrateDailyDataMap(saved ? JSON.parse(saved) : {});
   });
 
   const [logsHistory, setLogsHistory] = useState(() => {
@@ -109,6 +175,24 @@ export default function App() {
   const [selectedDayId, setSelectedDayId] = useState(() => {
     return activeDays[0]?.id || 'day1';
   });
+  const [overrideDayId, setOverrideDayId] = useState(null);
+
+  const weekdayMap = useMemo(() => {
+    const map = {};
+    let idx = 0;
+    (activeDays || []).forEach((day) => {
+      const m = (day.dayName || '').match(/\(([^)]+)\)/);
+      const key = m ? m[1].trim().toUpperCase() : WEEKDAYS_TR[idx % 7];
+      if (!map[key]) map[key] = day.id;
+      idx++;
+    });
+    return map;
+  }, [activeDays]);
+
+  const hasSchedule = Object.keys(weekdayMap).length > 0;
+
+  const weekdayLabel = getWeekdayForDate(selectedDate);
+  const scheduledDayId = weekdayMap[weekdayLabel];
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isProgramModalOpen, setIsProgramModalOpen] = useState(false);
@@ -141,6 +225,10 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(logsHistory));
   }, [logsHistory]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_HIDDEN_PROGRAMS, JSON.stringify(hiddenProgramIds));
+  }, [hiddenProgramIds]);
+
   const hydratedRef = useRef(false);
   const saveTimeoutRef = useRef(null);
   const userRef = useRef(null);
@@ -160,6 +248,7 @@ export default function App() {
     activeProfileId,
     customPrograms,
     activeProgramId,
+    hiddenProgramIds,
     dailyDataMap,
     logsHistory
   });
@@ -198,7 +287,8 @@ export default function App() {
           if (data.activeProfileId) setActiveProfileId(data.activeProfileId);
           if (data.customPrograms) setCustomPrograms(data.customPrograms);
           if (data.activeProgramId) setActiveProgramId(data.activeProgramId);
-          if (data.dailyDataMap) setDailyDataMap(data.dailyDataMap);
+          if (data.hiddenProgramIds) setHiddenProgramIds(data.hiddenProgramIds);
+          if (data.dailyDataMap) setDailyDataMap(migrateDailyDataMap(data.dailyDataMap));
           if (data.logsHistory) setLogsHistory(data.logsHistory);
         }
         hydratedRef.current = true;
@@ -230,6 +320,13 @@ export default function App() {
       setSelectedDayId(activeDays[0]?.id || 'day1');
     }
   }, [activeDays, selectedDayId]);
+
+  useEffect(() => {
+    setOverrideDayId(null);
+    if (scheduledDayId) {
+      setSelectedDayId(scheduledDayId);
+    }
+  }, [selectedDate, activeProgramId, scheduledDayId]);
 
   const currentDayData = useMemo(() => {
     return dailyDataMap[selectedDate] || {
@@ -264,18 +361,27 @@ export default function App() {
   const handleUpdateWorkout = useCallback((dayId, exId, newSets) => {
     setDailyDataMap((prev) => {
       const dayRecord = prev[selectedDate] || {};
+      const wd = dayRecord.workoutData || {};
+      const prog = wd[activeProgram.id] || {};
+      const day = prog[dayId] || {};
       return {
         ...prev,
         [selectedDate]: {
           ...dayRecord,
           workoutData: {
-            ...(dayRecord.workoutData || {}),
-            [exId]: newSets
+            ...wd,
+            [activeProgram.id]: {
+              ...prog,
+              [dayId]: {
+                ...day,
+                [exId]: newSets
+              }
+            }
           }
         }
       };
     });
-  }, [selectedDate]);
+  }, [selectedDate, activeProgram.id]);
 
   const handleUpdateDailyLog = useCallback(
     (updates) => {
@@ -298,6 +404,7 @@ export default function App() {
           activeProfileId,
           customPrograms,
           activeProgramId,
+          hiddenProgramIds,
           dailyDataMap: nextMap,
           logsHistory: logsHistoryRef.current
         }).catch((err) => {
@@ -306,7 +413,7 @@ export default function App() {
       }
       clearTimeout(saveTimeoutRef.current);
     },
-    [selectedDate, profiles, activeProfileId, customPrograms, activeProgramId]
+    [selectedDate, profiles, activeProfileId, customPrograms, activeProgramId, hiddenProgramIds]
   );
 
   const handleSaveWeight = (e) => {
@@ -323,74 +430,94 @@ export default function App() {
     setTimeout(() => setWeightSavedFeedback(false), 2000);
   };
 
-  const weekdayMap = useMemo(() => {
-    const map = {};
-    (activeDays || []).forEach((day) => {
-      const m = (day.dayName || '').match(/\(([^)]+)\)/);
-      if (m) map[m[1].trim().toUpperCase()] = day.id;
-    });
-    return map;
-  }, [activeDays]);
-
-  const hasSchedule = Object.keys(weekdayMap).length > 0;
-
-  const scheduledDayId = useMemo(() => weekdayMap[getWeekdayForDate(selectedDate)], [weekdayMap, selectedDate]);
-
   const selectedDay = useMemo(() => {
-    const effectiveId = hasSchedule && scheduledDayId ? scheduledDayId : selectedDayId;
-    return activeDays.find((d) => d.id === effectiveId) || activeDays[0];
-  }, [activeDays, selectedDayId, hasSchedule, scheduledDayId]);
+    if (overrideDayId) {
+      const manual = activeDays.find((d) => d.id === overrideDayId);
+      if (manual) return manual;
+    }
+    if (scheduledDayId) {
+      return activeDays.find((d) => d.id === scheduledDayId) || activeDays[0];
+    }
+    if (hasSchedule) {
+      return REST_FALLBACK_DAY;
+    }
+    return activeDays.find((d) => d.id === selectedDayId) || activeDays[0];
+  }, [activeDays, overrideDayId, scheduledDayId, hasSchedule, selectedDayId]);
 
   const extraExercises = useMemo(() => {
-    const map = currentDayData.extraExercises || {};
-    return selectedDay ? map[selectedDay.id] || [] : [];
-  }, [currentDayData, selectedDay]);
+    return selectedDay ? getDayExtraExercises(currentDayData, activeProgram.id, selectedDay.id) : [];
+  }, [currentDayData, selectedDay, activeProgram.id]);
 
   const effectiveExercises = useMemo(() => {
     return [...(selectedDay?.exercises || []), ...extraExercises];
   }, [selectedDay, extraExercises]);
 
+  const dayWorkout = useMemo(() => {
+    const dayRecord = dailyDataMap[selectedDate] || {};
+    const progId = activeProgram.id;
+    const dayId = selectedDay?.id || 'day1';
+    const flat = {};
+    effectiveExercises.forEach((ex) => {
+      const sets = getWorkoutSets(dayRecord, progId, dayId, ex.id);
+      if (sets) flat[ex.id] = sets;
+    });
+    return flat;
+  }, [dailyDataMap, selectedDate, activeProgram.id, selectedDay, effectiveExercises]);
+
   const handleAddExtraExercise = useCallback((exercise) => {
     setDailyDataMap((prev) => {
       const dayRecord = prev[selectedDate] || {};
       const exMap = dayRecord.extraExercises || {};
+      const progMap = exMap[activeProgram.id] || {};
       const dayId = selectedDay?.id || 'day1';
-      const list = exMap[dayId] || [];
+      const list = progMap[dayId] || [];
       return {
         ...prev,
         [selectedDate]: {
           ...dayRecord,
           extraExercises: {
             ...exMap,
-            [dayId]: [...list, { id: `extra_${Date.now()}`, tag: 'Ek Hareket', ...exercise }]
+            [activeProgram.id]: {
+              ...progMap,
+              [dayId]: [...list, { id: `extra_${Date.now()}`, tag: 'Ek Hareket', ...exercise }]
+            }
           }
         }
       };
     });
-  }, [selectedDate, selectedDay]);
+  }, [selectedDate, activeProgram.id, selectedDay]);
 
   const handleRemoveExtraExercise = useCallback((exId) => {
     setDailyDataMap((prev) => {
       const dayRecord = prev[selectedDate] || {};
       const exMap = dayRecord.extraExercises || {};
+      const progMap = exMap[activeProgram.id] || {};
       const dayId = selectedDay?.id || 'day1';
-      const list = exMap[dayId] || [];
+      const list = progMap[dayId] || [];
       return {
         ...prev,
         [selectedDate]: {
           ...dayRecord,
           extraExercises: {
             ...exMap,
-            [dayId]: list.filter((e) => e.id !== exId)
+            [activeProgram.id]: {
+              ...progMap,
+              [dayId]: list.filter((e) => e.id !== exId)
+            }
           }
         }
       };
     });
-  }, [selectedDate, selectedDay]);
+  }, [selectedDate, activeProgram.id, selectedDay]);
 
   const handleFinishWorkout = useCallback(
     (day, notes) => {
-      const workoutData = currentDayData.workoutData || {};
+      if (currentDayData.workoutCompleted?.[activeProgram.id]?.completed) {
+        toast('Bu antrenman zaten kaydedildi. Tekrar kayıt oluşturulmadı.', 'info');
+        return;
+      }
+
+      const workoutData = dayWorkout;
       let totalVolumeKg = 0;
       let completedSetsCount = 0;
 
@@ -422,14 +549,21 @@ export default function App() {
 
       const nextLogs = [newLog, ...logsHistoryRef.current];
       const currentMap = dailyDataMapRef.current;
+      const prevDayRec = currentMap[selectedDate] || currentDayData;
+      const prevCompletion = prevDayRec.workoutCompleted || {};
       const nextDailyMap = {
         ...currentMap,
         [selectedDate]: {
-          ...(currentMap[selectedDate] || currentDayData),
-          workoutCompleted: true,
-          lastWorkoutAt: Date.now(),
-          completedSetsCount,
-          totalVolumeKg
+          ...prevDayRec,
+          workoutCompleted: {
+            ...prevCompletion,
+            [activeProgram.id]: {
+              completed: true,
+              lastWorkoutAt: Date.now(),
+              completedSetsCount,
+              totalVolumeKg
+            }
+          }
         }
       };
       logsHistoryRef.current = nextLogs;
@@ -445,6 +579,7 @@ export default function App() {
           activeProfileId,
           customPrograms,
           activeProgramId,
+          hiddenProgramIds,
           dailyDataMap: nextDailyMap,
           logsHistory: nextLogs
         }).catch((err) => {
@@ -453,15 +588,17 @@ export default function App() {
       }
       clearTimeout(saveTimeoutRef.current);
 
-      alert(`🎉 ${formatDateDisplay(selectedDate)} antrenmanı başarıyla kaydedildi!`);
+      toast(`🎉 ${formatDateDisplay(selectedDate)} antrenmanı başarıyla kaydedildi!`);
     },
     [
       currentDayData,
+      dayWorkout,
       effectiveExercises,
       extraExercises,
       formatDateDisplay,
       selectedDate,
       activeProgram.name,
+      activeProgram.id,
       profiles,
       activeProfileId,
       customPrograms,
@@ -483,7 +620,7 @@ export default function App() {
     const protein = Math.max(currentDayData.protein || 0, mealProtein);
     const water = currentDayData.water || 0;
 
-    const workout = currentDayData.workoutData || {};
+    const workout = dayWorkout;
     let totalSets = 0;
     let completedSets = 0;
     let volumeKg = 0;
@@ -509,7 +646,7 @@ export default function App() {
       protPct: Math.min(100, Math.round((protein / (activeProfile.targetProtein || 130)) * 100)),
       waterPct: Math.min(100, Math.round((water / (activeProfile.targetWater || 3)) * 100))
     };
-  }, [currentDayData, effectiveExercises, activeProfile.targetCalories, activeProfile.targetProtein, activeProfile.targetWater]);
+  }, [dayWorkout, effectiveExercises, currentDayData.meals, currentDayData.calories, currentDayData.protein, currentDayData.water, activeProfile.targetCalories, activeProfile.targetProtein, activeProfile.targetWater]);
 
   const handleSaveProfile = (savedProfile) => {
     setProfiles((prev) => {
@@ -538,15 +675,28 @@ export default function App() {
   };
 
   const handleDeleteCustomProgram = (progId) => {
+    const prog = customPrograms.find((p) => p.id === progId);
     setCustomPrograms((prev) => prev.filter((p) => p.id !== progId));
     if (activeProgramId === progId) {
       setActiveProgramId('preset_chest_back_arms');
     }
+    if (prog) toast(`🗑️ "${prog.name}" programı silindi.`);
+  };
+
+  const handleDeletePresetProgram = (progId) => {
+    const prog = PRESET_PROGRAMS.find((p) => p.id === progId);
+    setHiddenProgramIds((prev) => (prev.includes(progId) ? prev : [...prev, progId]));
+    if (activeProgramId === progId) {
+      const visible = PRESET_PROGRAMS.filter((p) => p.id !== progId && !hiddenProgramIds.includes(p.id));
+      const fallback = visible[0] || PRESET_PROGRAMS.find((p) => p.id !== progId);
+      if (fallback) setActiveProgramId(fallback.id);
+    }
+    if (prog) toast(`🗑️ "${prog.name}" standart programı kaldırıldı.`);
   };
 
   const handleApplyRecommendedProgram = (recProgramId) => {
     setActiveProgramId(recProgramId);
-    alert('🎯 Profilinize en uygun antrenman programı seçildi ve hedefleriniz güncellendi!');
+    toast('🎯 Profilinize en uygun antrenman programı seçildi ve hedefleriniz güncellendi!');
   };
 
   if (loading) {
@@ -651,34 +801,32 @@ export default function App() {
 
       {activeTab === 'workout' && (
         <>
-          {hasSchedule ? (
-            <div className="schedule-note">
-              <Calendar size={13} color="var(--primary)" />
-              <span>Takvime göre: {selectedDay.dayName}</span>
-            </div>
-          ) : (
-            <div className="day-selector-scroll">
-              {activeDays.map((day) => (
-                <div
-                  key={day.id}
-                  className={`day-pill ${selectedDayId === day.id ? 'active' : ''}`}
-                  onClick={() => setSelectedDayId(day.id)}
-                >
-                  {day.dayName.split(' ')[0]} {day.dayName.split(' ')[1] || ''}
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="schedule-note">
+            <Calendar size={13} color="var(--primary)" />
+            <span>Takvime göre: {selectedDay.dayName}{!selectedDay.dayName.includes('(') && ` (${weekdayLabel})`}</span>
+          </div>
+
+          <div className="day-selector-scroll">
+            {activeDays.map((day) => (
+              <div
+                key={day.id}
+                className={`day-pill ${selectedDay.id === day.id ? 'active' : ''}`}
+                onClick={() => setOverrideDayId(day.id)}
+              >
+                {day.dayName.split(' ')[0]} {day.dayName.split(' ')[1] || ''}
+              </div>
+            ))}
+          </div>
 
           <WorkoutLogger
             selectedDay={selectedDay}
-            workoutData={currentDayData.workoutData || {}}
+            workoutData={dayWorkout}
             onUpdateWorkout={handleUpdateWorkout}
             onFinishWorkout={handleFinishWorkout}
             onOpenTimer={() => setIsTimerOpen(true)}
             previousLogs={logsHistory}
             extraExercises={extraExercises}
-            workoutCompleted={currentDayData.workoutCompleted}
+            workoutCompleted={!!currentDayData.workoutCompleted?.[activeProgram.id]?.completed}
             onAddExtraExercise={handleAddExtraExercise}
             onRemoveExtraExercise={handleRemoveExtraExercise}
           />
@@ -756,7 +904,7 @@ export default function App() {
           weightLogs={weightLogsForChart}
           onDeleteLog={(id) => setLogsHistory((prev) => prev.filter((l) => l.id !== id))}
           onExportData={() => {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ profiles, activeProfileId, customPrograms, activeProgramId, dailyDataMap, logsHistory }, null, 2));
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ profiles, activeProfileId, customPrograms, activeProgramId, hiddenProgramIds, dailyDataMap, logsHistory }, null, 2));
             const anchor = document.createElement('a');
             anchor.setAttribute("href", dataStr);
             anchor.setAttribute("download", `fitness_yedek.json`);
@@ -775,11 +923,12 @@ export default function App() {
                   if (p.activeProfileId) setActiveProfileId(p.activeProfileId);
                   if (p.customPrograms) setCustomPrograms(p.customPrograms);
                   if (p.activeProgramId) setActiveProgramId(p.activeProgramId);
-                  if (p.dailyDataMap) setDailyDataMap(p.dailyDataMap);
+                  if (p.hiddenProgramIds) setHiddenProgramIds(p.hiddenProgramIds);
+                  if (p.dailyDataMap) setDailyDataMap(migrateDailyDataMap(p.dailyDataMap));
                   if (p.logsHistory) setLogsHistory(p.logsHistory);
-                  alert('✅ Veriler başarıyla yüklendi!');
+                  toast('✅ Veriler başarıyla yüklendi!');
                 } catch (err) {
-                  alert('❌ Geçersiz yedek dosyası!');
+                  toast('❌ Geçersiz yedek dosyası!', 'error');
                 }
               };
             }
@@ -830,9 +979,11 @@ export default function App() {
         <ProgramManagerModal
           activeProgramId={activeProgramId}
           customPrograms={customPrograms}
+          programs={allPrograms}
           onSelectProgram={setActiveProgramId}
           onSaveCustomProgram={handleSaveCustomProgram}
           onDeleteCustomProgram={handleDeleteCustomProgram}
+          onDeletePresetProgram={handleDeletePresetProgram}
           onClose={() => setIsProgramModalOpen(false)}
         />
       )}
@@ -869,6 +1020,7 @@ export default function App() {
           <Sparkles size={18} color={activeTab === 'ai' ? '#C084FC' : undefined} /> AI Koç
         </button>
       </nav>
+      <Toaster />
     </div>
   );
 }

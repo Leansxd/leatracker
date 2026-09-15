@@ -1,13 +1,15 @@
 import React, { useState, useRef } from 'react';
-import { X, Check, Plus, Trash2, Dumbbell, Sparkles, ChevronDown, ChevronUp, Layers, BookOpen, AlertCircle } from 'lucide-react';
+import { X, Check, Plus, Trash2, Dumbbell, Sparkles, ChevronDown, ChevronUp, ChevronRight, Layers, BookOpen, AlertCircle, ArrowLeft } from 'lucide-react';
 import { PRESET_PROGRAMS } from '../data/programPresets';
+import { toast } from './Toaster';
 
 export default function ProgramManagerModal({
   activeProgramId,
-  customPrograms,
+  programs,
   onSelectProgram,
   onSaveCustomProgram,
   onDeleteCustomProgram,
+  onDeletePresetProgram,
   onClose
 }) {
   const [activeTab, setActiveTab] = useState('presets');
@@ -53,6 +55,23 @@ export default function ProgramManagerModal({
 
   const [customName, setCustomName] = useState('');
   const [customDesc, setCustomDesc] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [editingDayIdx, setEditingDayIdx] = useState(null);
+  const [dayDeleteConfirm, setDayDeleteConfirm] = useState(false);
+  const deleteConfirmTimerRef = useRef(null);
+
+  const askDelete = (id) => {
+    setDeleteConfirmId(id);
+    clearTimeout(deleteConfirmTimerRef.current);
+    deleteConfirmTimerRef.current = setTimeout(() => {
+      setDeleteConfirmId(null);
+    }, 4000);
+  };
+
+  const cancelDelete = () => {
+    clearTimeout(deleteConfirmTimerRef.current);
+    setDeleteConfirmId(null);
+  };
   const [customDays, setCustomDays] = useState([
     {
       id: 'custom_d1',
@@ -99,7 +118,7 @@ export default function ProgramManagerModal({
     }
   ]);
 
-  const allPrograms = [...PRESET_PROGRAMS, ...customPrograms];
+  const allPrograms = programs || [...PRESET_PROGRAMS];
 
   const toggleExpand = (id) => {
     setExpandedProgramId((prev) => (prev === id ? null : id));
@@ -192,7 +211,7 @@ export default function ProgramManagerModal({
   const handleSaveCustom = (e) => {
     e.preventDefault();
     if (!customName.trim()) {
-      alert('Lütfen program adı girin.');
+      toast('Lütfen program adı girin.', 'error');
       return;
     }
 
@@ -330,53 +349,126 @@ export default function ProgramManagerModal({
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '10px' }}>
-                      {prog.isCustom && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (window.confirm(`"${prog.name}" programını silmek istediğinize emin misiniz?`)) {
-                              onDeleteCustomProgram(prog.id);
-                            }
-                          }}
+                      {deleteConfirmId === prog.id ? (
+                        <div
                           style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#EF4444',
-                            cursor: 'pointer',
-                            padding: '6px'
-                          }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-
-                      {!isActive ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onSelectProgram(prog.id);
-                            onClose();
-                          }}
-                          style={{
-                            background: '#3B82F6',
-                            color: '#fff',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '8px',
-                            fontSize: '0.75rem',
-                            fontWeight: 800,
-                            cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '4px'
+                            gap: '6px',
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            border: '1px solid rgba(239, 68, 68, 0.35)',
+                            borderRadius: '8px',
+                            padding: '4px 6px'
                           }}
                         >
-                          <Check size={14} /> Seç
-                        </button>
-                      ) : (
-                        <div style={{ color: '#10B981', display: 'flex', alignItems: 'center', padding: '6px' }}>
-                          <Check size={18} />
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#F87171', whiteSpace: 'nowrap' }}>
+                            Emin misin?
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              cancelDelete();
+                              if (prog.isCustom) {
+                                onDeleteCustomProgram(prog.id);
+                              } else {
+                                onDeletePresetProgram(prog.id);
+                              }
+                            }}
+                            style={{
+                              background: '#EF4444',
+                              color: '#fff',
+                              border: 'none',
+                              height: '26px',
+                              padding: '0 10px',
+                              borderRadius: '6px',
+                              fontSize: '0.7rem',
+                              fontWeight: 800,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Sil
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelDelete}
+                            style={{
+                              background: 'var(--surface-alt)',
+                              color: 'var(--text-main)',
+                              border: 'none',
+                              height: '26px',
+                              padding: '0 8px',
+                              borderRadius: '6px',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Vazgeç
+                          </button>
                         </div>
+                      ) : (
+                        <>
+                          {prog.isCustom ? (
+                            <button
+                              type="button"
+                              onClick={() => askDelete(prog.id)}
+                              title={`"${prog.name}" programını sil`}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#EF4444',
+                                cursor: 'pointer',
+                                padding: '6px'
+                              }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => askDelete(prog.id)}
+                              title={`"${prog.name}" hazır programını kaldır`}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#6E7683',
+                                cursor: 'pointer',
+                                padding: '6px'
+                              }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+
+                          {!isActive ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onSelectProgram(prog.id);
+                                onClose();
+                              }}
+                              style={{
+                                background: '#3B82F6',
+                                color: '#fff',
+                                border: 'none',
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <Check size={14} /> Seç
+                            </button>
+                          ) : (
+                            <div style={{ color: '#10B981', display: 'flex', alignItems: 'center', padding: '6px' }}>
+                              <Check size={18} />
+                            </div>
+                          )}
+                        </>
                       )}
 
                       <button
@@ -436,7 +528,8 @@ export default function ProgramManagerModal({
         )}
 
         {activeTab === 'custom' && (
-          <form onSubmit={handleSaveCustom} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <>
+            <form onSubmit={handleSaveCustom} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)' }}>
               <label style={{ fontSize: '0.78rem', color: 'var(--text-sub)', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
                 Program Adı *
@@ -489,165 +582,30 @@ export default function ProgramManagerModal({
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {customDays.map((day, dIdx) => (
-                <div
-                  key={day.id}
-                  className={day.isRest ? 'prog-day rest' : 'prog-day'}
-                  style={{
-                    background: 'linear-gradient(160deg, #14181F 0%, #0E1117 100%)',
-                    border: '1px solid var(--border)',
-                    borderLeft: day.isRest ? '3px solid var(--border-subtle)' : '3px solid var(--primary)',
-                    borderRadius: '11px',
-                    padding: '12px'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div className="prog-day-num">{dIdx + 1}</div>
-                      <input
-                        type="text"
-                        value={day.dayName}
-                        onChange={(e) => handleDayChange(dIdx, 'dayName', e.target.value)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          borderBottom: '1px dashed var(--border-subtle)',
-                          color: '#FAFAFA',
-                          fontWeight: 700,
-                          fontSize: '0.8rem',
-                          width: '100px'
-                        }}
-                      />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {customDays.map((day, dIdx) => {
+                const isRest = !!day.isRest;
+                return (
+                  <button
+                    key={day.id}
+                    type="button"
+                    className={`custom-day-preview${isRest ? ' rest' : ''}`}
+                    onClick={() => setEditingDayIdx(dIdx)}
+                  >
+                    <div className="prog-day-num">{dIdx + 1}</div>
+                    <div className="prog-day-body">
+                      <div className="prog-day-name">{day.dayName || `GÜN ${dIdx + 1}`}</div>
+                      <div className="prog-day-title">{day.title || 'Başlık girin'}</div>
                     </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: 'var(--text-sub)', cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          checked={day.isRest}
-                          onChange={(e) => handleDayChange(dIdx, 'isRest', e.target.checked)}
-                        />
-                        Dinlenme Günü
-                      </label>
-
-                      {customDays.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveDay(dIdx)}
-                          style={{ background: 'transparent', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '2px' }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <input
-                    type="text"
-                    placeholder="Gün Başlığı (Örn: Göğüs + Kol)"
-                    value={day.title}
-                    onChange={(e) => handleDayChange(dIdx, 'title', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '6px 8px',
-                      borderRadius: '6px',
-                      background: 'var(--surface-alt)',
-                      border: '1px solid var(--border-subtle)',
-                      color: '#FAFAFA',
-                      fontSize: '0.78rem',
-                      marginBottom: '8px'
-                    }}
-                  />
-
-                  {day.isRest ? (
-                    <input
-                      type="text"
-                      placeholder="Dinlenme günü tavsiyesi..."
-                      value={day.tips || ''}
-                      onChange={(e) => handleDayChange(dIdx, 'tips', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        borderRadius: '6px',
-                        background: 'var(--surface-alt)',
-                        border: '1px solid var(--border-subtle)',
-                        color: '#A1A1AA',
-                        fontSize: '0.75rem'
-                      }}
-                    />
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
-                      {(day.exercises || []).map((ex, eIdx) => (
-                        <div
-                          key={ex.id || eIdx}
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'minmax(0,1.8fr) minmax(0,0.9fr) minmax(0,0.9fr) 28px',
-                            gap: '6px',
-                            alignItems: 'center',
-                            background: 'var(--bg-dark)',
-                            padding: '6px',
-                            borderRadius: '6px'
-                          }}
-                        >
-                          <input
-                            type="text"
-                            placeholder="Hareket Adı"
-                            value={ex.name}
-                            onChange={(e) => handleExerciseChange(dIdx, eIdx, 'name', e.target.value)}
-                            style={{ background: 'transparent', border: 'none', color: '#FAFAFA', fontSize: '0.75rem' }}
-                            required
-                          />
-                          <input
-                            type="number"
-                            placeholder="Set"
-                            value={ex.defaultSets}
-                            onChange={(e) => handleExerciseChange(dIdx, eIdx, 'defaultSets', e.target.value)}
-                            style={{ background: 'var(--surface-alt)', border: '1px solid var(--border-subtle)', color: '#FAFAFA', fontSize: '0.75rem', padding: '2px 4px', borderRadius: '4px', textAlign: 'center' }}
-                            min="1"
-                            max="10"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Tekrar"
-                            value={ex.targetReps}
-                            onChange={(e) => handleExerciseChange(dIdx, eIdx, 'targetReps', e.target.value)}
-                            style={{ background: 'var(--surface-alt)', border: '1px solid var(--border-subtle)', color: '#FAFAFA', fontSize: '0.75rem', padding: '2px 4px', borderRadius: '4px', textAlign: 'center' }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveExercise(dIdx, eIdx)}
-                            style={{ background: 'transparent', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '2px' }}
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      ))}
-
-                      <button
-                        type="button"
-                        onClick={() => handleAddExercise(dIdx)}
-                        style={{
-                          alignSelf: 'flex-start',
-                          background: 'transparent',
-                          color: '#3B82F6',
-                          border: 'none',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          marginTop: '4px'
-                        }}
-                      >
-                        <Plus size={12} /> Hareketi Ekle
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    <span className="prog-day-badge">
+                      {isRest ? 'Dinlenme' : `${(day.exercises || []).length} Hareket`}
+                    </span>
+                    <span className="custom-day-preview-chevron">
+                      <ChevronRight size={16} />
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             <button
@@ -672,6 +630,200 @@ export default function ProgramManagerModal({
               <Sparkles size={16} /> PROGRAMI KAYDET & KULLAN
             </button>
           </form>
+
+          {editingDayIdx !== null && customDays[editingDayIdx] && (
+            (() => {
+              const day = customDays[editingDayIdx];
+              const dIdx = editingDayIdx;
+              const isRest = !!day.isRest;
+              return (
+                <div
+                  className="prog-editor-overlay"
+                  onClick={() => {
+                    setEditingDayIdx(null);
+                    setDayDeleteConfirm(false);
+                  }}
+                >
+                  <div className="prog-editor-panel" onClick={(e) => e.stopPropagation()}>
+                    <div className="prog-editor-grabber">
+                      <div className="prog-editor-grabber-handle" />
+                    </div>
+                    <div className="prog-editor-header">
+                      <button
+                        type="button"
+                        className="prog-editor-header-btn"
+                        onClick={() => {
+                          setEditingDayIdx(null);
+                          setDayDeleteConfirm(false);
+                        }}
+                      >
+                        <ArrowLeft size={18} />
+                      </button>
+                      <div className="prog-editor-header-title">GÜN {dIdx + 1} DÜZENLE</div>
+                      <button
+                        type="button"
+                        className="prog-editor-header-btn"
+                        onClick={() => {
+                          setEditingDayIdx(null);
+                          setDayDeleteConfirm(false);
+                        }}
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+
+                    <div className="prog-editor-body">
+                      <div>
+                        <div className="prog-editor-section-label">Gün Adı</div>
+                        <input
+                          className="prog-editor-main-input"
+                          type="text"
+                          value={day.dayName}
+                          onChange={(e) => handleDayChange(dIdx, 'dayName', e.target.value)}
+                          placeholder="1. GÜN"
+                        />
+                      </div>
+                      <div>
+                        <div className="prog-editor-section-label">Başlık</div>
+                        <input
+                          className="prog-editor-main-input"
+                          type="text"
+                          value={day.title}
+                          onChange={(e) => handleDayChange(dIdx, 'title', e.target.value)}
+                          placeholder="Örn: Göğüs + Kol"
+                        />
+                      </div>
+
+                      <label className="prog-editor-toggle">
+                        <input
+                          type="checkbox"
+                          checked={isRest}
+                          onChange={(e) => handleDayChange(dIdx, 'isRest', e.target.checked)}
+                        />
+                        <span className="prog-editor-switch" />
+                        <span className="prog-editor-toggle-text">
+                          {isRest ? 'Dinlenme Günü (aktif)' : 'Dinlenme Günü olarak işaretle'}
+                        </span>
+                      </label>
+
+                      {isRest ? (
+                        <div>
+                          <div className="prog-editor-section-label">Dinlenme Tavsiyesi</div>
+                          <input
+                            className="prog-editor-main-input"
+                            type="text"
+                            value={day.tips || ''}
+                            onChange={(e) => handleDayChange(dIdx, 'tips', e.target.value)}
+                            placeholder="Örn: Kas onarımı için dinlenme günü."
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div className="prog-editor-section-label">Hareketler</div>
+                          {(day.exercises || []).map((ex, eIdx) => (
+                            <div key={ex.id || eIdx} className="prog-ex-row">
+                              <div className="prog-ex-idx">{eIdx + 1}</div>
+                              <input
+                                className="prog-ex-name"
+                                type="text"
+                                placeholder="Hareket Adı"
+                                value={ex.name}
+                                onChange={(e) => handleExerciseChange(dIdx, eIdx, 'name', e.target.value)}
+                                required
+                              />
+                              <div className="prog-ex-meta">
+                                <span className="prog-ex-meta-label">SET</span>
+                                <input
+                                  className="prog-ex-input"
+                                  type="number"
+                                  min="1"
+                                  max="10"
+                                  value={ex.defaultSets}
+                                  onChange={(e) => handleExerciseChange(dIdx, eIdx, 'defaultSets', e.target.value)}
+                                />
+                              </div>
+                              <div className="prog-ex-meta">
+                                <span className="prog-ex-meta-label">TEKRAR</span>
+                                <input
+                                  className="prog-ex-input"
+                                  type="text"
+                                  placeholder="8-10"
+                                  value={ex.targetReps}
+                                  onChange={(e) => handleExerciseChange(dIdx, eIdx, 'targetReps', e.target.value)}
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                className="prog-ex-del"
+                                onClick={() => handleRemoveExercise(dIdx, eIdx)}
+                                title="Hareketi kaldır"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                          {(day.exercises || []).length === 0 && (
+                            <div className="prog-editor-empty">Henüz hareket eklenmedi.</div>
+                          )}
+                          <button type="button" className="prog-ex-add" onClick={() => handleAddExercise(dIdx)}>
+                            <Plus size={12} /> Hareketi Ekle
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="prog-editor-footer">
+                      {dayDeleteConfirm ? (
+                        <div className="prog-editor-delete-confirm">
+                          <span>Bu günü silmek istediğinize emin misiniz?</span>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              style={{ background: '#EF4444', color: '#fff' }}
+                              onClick={() => {
+                                handleRemoveDay(dIdx);
+                                setDayDeleteConfirm(false);
+                                setEditingDayIdx(null);
+                              }}
+                            >
+                              Sil
+                            </button>
+                            <button
+                              type="button"
+                              style={{ background: 'var(--surface-alt)', color: 'var(--text-main)' }}
+                              onClick={() => setDayDeleteConfirm(false)}
+                            >
+                              Vazgeç
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="prog-editor-delete"
+                          onClick={() => setDayDeleteConfirm(true)}
+                          disabled={customDays.length <= 1}
+                        >
+                          <Trash2 size={14} /> Günü Sil
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="prog-editor-save"
+                        onClick={() => {
+                          setEditingDayIdx(null);
+                          setDayDeleteConfirm(false);
+                        }}
+                      >
+                        <Check size={16} /> GÜNÜ KAYDET
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
+          )}
+          </>
         )}
         </div>
       </div>

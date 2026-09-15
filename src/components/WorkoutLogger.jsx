@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, Plus, Trash2, Info, Timer, Sparkles, CheckCircle2, Flame, ChevronDown, ChevronUp, CheckSquare, Square } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WARMUP_ROUTINES } from '../data/nutritionPresets';
+import { toast } from './Toaster';
 
 export default function WorkoutLogger({
   selectedDay,
@@ -93,6 +94,10 @@ export default function WorkoutLogger({
   };
 
   const handleFinish = () => {
+    if (workoutCompleted) {
+      toast('Bu antrenman zaten kaydedildi.', 'info');
+      return;
+    }
     confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
     onFinishWorkout(selectedDay, workoutNotes);
   };
@@ -508,9 +513,15 @@ export default function WorkoutLogger({
           }}
         />
 
-        <button onClick={handleFinish} className="primary-btn">
-          <CheckCircle2 size={18} /> ANTRENMANI KAYDET & TAMAMLA
-        </button>
+        {workoutCompleted ? (
+          <button onClick={handleFinish} className="primary-btn" style={{ background: 'rgba(16,185,129,0.15)', color: '#10B981', border: '1px solid rgba(16,185,129,0.4)', boxShadow: 'none', cursor: 'default' }}>
+            <CheckCircle2 size={18} /> ANTRENMAN KAYDEDİLDİ
+          </button>
+        ) : (
+          <button onClick={handleFinish} className="primary-btn">
+            <CheckCircle2 size={18} /> ANTRENMANI KAYDET & TAMAMLA
+          </button>
+        )}
       </div>
     </div>
   );
