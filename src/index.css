@@ -593,7 +593,7 @@ body {
 /* ===== Rest timer ===== */
 .rest-timer-bar {
   position: fixed;
-  bottom: 70px;
+  bottom: 88px;
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 24px);
