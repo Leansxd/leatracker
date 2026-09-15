@@ -39,17 +39,17 @@ export default function AddFoodModal({ onAddFood, onClose }) {
     <div className="modal-overlay">
       <div className="glass-panel modal-content" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F1F5F9', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Utensils size={20} color="#00E5FF" /> Besin / Öğün Ekle
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F4F6F8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Utensils size={20} color="#3B82F6" /> Besin / Öğün Ekle
           </h2>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#A1A7B3', cursor: 'pointer' }}>
             <X size={20} />
           </button>
         </div>
 
         {/* Öğün Türü Seçici */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ fontSize: '0.78rem', color: '#94A3B8', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
+          <label style={{ fontSize: '0.78rem', color: '#A1A7B3', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
             ÖĞÜN SEÇİMİ
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
@@ -61,9 +61,9 @@ export default function AddFoodModal({ onAddFood, onClose }) {
                 style={{
                   padding: '8px 4px',
                   borderRadius: '8px',
-                  border: `1px solid ${selectedMeal === m ? '#00E5FF' : 'var(--border-color)'}`,
-                  background: selectedMeal === m ? 'rgba(0, 229, 255, 0.15)' : 'rgba(15, 23, 42, 0.6)',
-                  color: selectedMeal === m ? '#00E5FF' : '#94A3B8',
+                  border: `1px solid ${selectedMeal === m ? '#3B82F6' : 'var(--border-color)'}`,
+                  background: selectedMeal === m ? 'rgba(59, 130, 246, 0.12)' : 'rgba(15, 23, 42, 0.6)',
+                  color: selectedMeal === m ? '#3B82F6' : '#A1A7B3',
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   cursor: 'pointer'
@@ -77,12 +77,12 @@ export default function AddFoodModal({ onAddFood, onClose }) {
 
         {/* Hızlı Seçim Listesi */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ fontSize: '0.78rem', color: '#94A3B8', fontWeight: 700, display: 'flex', alignItems: 'center', justifyBetween: 'space-between', gap: '6px', marginBottom: '6px' }}>
+          <label style={{ fontSize: '0.78rem', color: '#A1A7B3', fontWeight: 700, display: 'flex', alignItems: 'center', justifyBetween: 'space-between', gap: '6px', marginBottom: '6px' }}>
             <span>⚡ HIZLI SEÇİM (HAZIR BESİNLER)</span>
           </label>
 
           <div className="input-group-compact" style={{ marginBottom: '8px' }}>
-            <Search size={14} color="#64748B" />
+            <Search size={14} color="#6E7683" />
             <input
               type="text"
               placeholder="Besin ara..."
@@ -109,8 +109,8 @@ export default function AddFoodModal({ onAddFood, onClose }) {
                   cursor: 'pointer'
                 }}
               >
-                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#F1F5F9' }}>{item.name}</div>
-                <div style={{ fontSize: '0.68rem', color: '#00E5FF', marginTop: '2px' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#F4F6F8' }}>{item.name}</div>
+                <div style={{ fontSize: '0.68rem', color: '#3B82F6', marginTop: '2px' }}>
                   {item.calories} kcal • {item.protein}g protein
                 </div>
               </button>
@@ -121,7 +121,7 @@ export default function AddFoodModal({ onAddFood, onClose }) {
         {/* Manuel/Seçilen Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
-            <label style={{ fontSize: '0.78rem', color: '#94A3B8', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '0.78rem', color: '#A1A7B3', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
               Besin / Yemek Adı
             </label>
             <input
@@ -130,14 +130,14 @@ export default function AddFoodModal({ onAddFood, onClose }) {
               value={foodName}
               onChange={(e) => setFoodName(e.target.value)}
               className="input-group-compact"
-              style={{ width: '100%', padding: '10px', color: '#F1F5F9' }}
+              style={{ width: '100%', padding: '10px', color: '#F4F6F8' }}
               required
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
-              <label style={{ fontSize: '0.78rem', color: '#94A3B8', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.78rem', color: '#A1A7B3', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
                 Kalori (kcal)
               </label>
               <input
@@ -146,13 +146,13 @@ export default function AddFoodModal({ onAddFood, onClose }) {
                 value={calories}
                 onChange={(e) => setCalories(e.target.value)}
                 className="input-group-compact"
-                style={{ width: '100%', padding: '10px', color: '#FF9100' }}
+                style={{ width: '100%', padding: '10px', color: '#F59E0B' }}
                 required
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', color: '#94A3B8', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.78rem', color: '#A1A7B3', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
                 Protein (gram)
               </label>
               <input
@@ -161,7 +161,7 @@ export default function AddFoodModal({ onAddFood, onClose }) {
                 value={protein}
                 onChange={(e) => setProtein(e.target.value)}
                 className="input-group-compact"
-                style={{ width: '100%', padding: '10px', color: '#00E676' }}
+                style={{ width: '100%', padding: '10px', color: '#10B981' }}
                 required
               />
             </div>

@@ -4,7 +4,7 @@ import { Scale, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 export default function WeightChart({ weightLogs }) {
   if (!weightLogs || weightLogs.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '16px', color: '#64748B', fontSize: '0.82rem' }}>
+      <div style={{ textAlign: 'center', padding: '16px', color: '#6E7683', fontSize: '0.82rem' }}>
         Henüz tartı verisi bulunmuyor. Üst kısımdaki "Bugünkü Kilonu Gir" bölümünden ilk kilo kaydını ekle!
       </div>
     );
@@ -45,14 +45,14 @@ export default function WeightChart({ weightLogs }) {
         </div>
 
         <div className="stat-box" style={{ padding: '8px' }}>
-          <div className="stat-box-val" style={{ fontSize: '1.1rem', color: diff < 0 ? '#00E676' : diff > 0 ? '#FF9100' : '#00E5FF' }}>
+          <div className="stat-box-val" style={{ fontSize: '1.1rem', color: diff < 0 ? '#10B981' : diff > 0 ? '#F59E0B' : '#3B82F6' }}>
             {diff > 0 ? `+${diff}` : diff} kg
           </div>
           <div className="stat-box-lbl">Toplam Değişim</div>
         </div>
 
         <div className="stat-box" style={{ padding: '8px' }}>
-          <div className="stat-box-val" style={{ fontSize: '1.1rem', color: '#B388FF' }}>
+          <div className="stat-box-val" style={{ fontSize: '1.1rem', color: '#6366F1' }}>
             {(weights.reduce((a, b) => a + b, 0) / weights.length).toFixed(1)} kg
           </div>
           <div className="stat-box-lbl">Ortalama Kilo</div>
@@ -66,13 +66,13 @@ export default function WeightChart({ weightLogs }) {
           <line x1="0" y1={height / 2} x2={width} y2={height / 2} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
           
           {/* Main Line */}
-          <path d={pathD} fill="none" stroke="#00E5FF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={pathD} fill="none" stroke="#3B82F6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
           {/* Points */}
           {points.map((p, idx) => (
             <g key={idx}>
-              <circle cx={p.x} cy={p.y} r="5" fill="#0B0F19" stroke="#00E5FF" strokeWidth="2.5" />
-              <text x={p.x} y={p.y - 8} fill="#F1F5F9" fontSize="9" fontWeight="700" textAnchor="middle">
+              <circle cx={p.x} cy={p.y} r="5" fill="#0B0F19" stroke="#3B82F6" strokeWidth="2.5" />
+              <text x={p.x} y={p.y - 8} fill="#F4F6F8" fontSize="9" fontWeight="700" textAnchor="middle">
                 {p.weight}
               </text>
             </g>
@@ -87,7 +87,7 @@ export default function WeightChart({ weightLogs }) {
             key={idx}
             style={{
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               padding: '8px 12px',
               background: 'rgba(15, 23, 42, 0.4)',
               borderRadius: '8px',
@@ -95,8 +95,8 @@ export default function WeightChart({ weightLogs }) {
               fontSize: '0.8rem'
             }}
           >
-            <span style={{ color: '#94A3B8' }}>{item.date}</span>
-            <strong style={{ color: '#00E5FF' }}>{item.weight} kg</strong>
+            <span style={{ color: '#A1A7B3' }}>{item.date}</span>
+            <strong style={{ color: '#3B82F6' }}>{item.weight} kg</strong>
           </div>
         ))}
       </div>

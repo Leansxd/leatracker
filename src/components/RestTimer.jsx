@@ -55,7 +55,7 @@ export default function RestTimer({ isOpen, onClose }) {
   return (
     <div className="rest-timer-bar">
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Bell size={18} color="#00E5FF" className={isActive ? "pulse" : ""} />
+        <Bell size={18} color="#3B82F6" className={isActive ? "pulse" : ""} />
         <span className="timer-digits">{formatTime(seconds)}</span>
       </div>
 
@@ -68,19 +68,19 @@ export default function RestTimer({ isOpen, onClose }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
         <button 
           onClick={toggleTimer} 
-          style={{ background: 'transparent', border: 'none', color: '#00E5FF', cursor: 'pointer' }}
+          style={{ background: 'transparent', border: 'none', color: '#3B82F6', cursor: 'pointer' }}
         >
           {isActive ? <Pause size={20} /> : <Play size={20} />}
         </button>
         <button 
           onClick={resetTimer} 
-          style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
+          style={{ background: 'transparent', border: 'none', color: '#A1A7B3', cursor: 'pointer' }}
         >
           <RotateCcw size={18} />
         </button>
         <button 
           onClick={onClose} 
-          style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', marginLeft: '6px' }}
+          style={{ background: 'transparent', border: 'none', color: '#6E7683', cursor: 'pointer', marginLeft: '6px' }}
         >
           <X size={18} />
         </button>

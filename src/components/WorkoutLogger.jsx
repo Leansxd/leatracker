@@ -9,12 +9,21 @@ export default function WorkoutLogger({
   onUpdateWorkout,
   onFinishWorkout,
   onOpenTimer,
-  previousLogs
+  previousLogs,
+  extraExercises = [],
+  workoutCompleted = false,
+  onAddExtraExercise,
+  onRemoveExtraExercise
 }) {
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [showTipsMap, setShowTipsMap] = useState({});
   const [isWarmupOpen, setIsWarmupOpen] = useState(false);
   const [warmupChecked, setWarmupChecked] = useState({});
+  const [isAddingExercise, setIsAddingExercise] = useState(false);
+  const [newExercise, setNewExercise] = useState({ name: '', defaultSets: 3, targetReps: '8-10', suggestedWeight: '10 kg' });
+
+  const allExercises = [...(selectedDay.exercises || []), ...extraExercises];
+  const isExtraExercise = (ex) => extraExercises.some((e) => e.id === ex.id);
 
   if (selectedDay.isRest) {
     return (
@@ -88,11 +97,25 @@ export default function WorkoutLogger({
     onFinishWorkout(selectedDay, workoutNotes);
   };
 
+  const handleAddExercise = () => {
+    const name = newExercise.name.trim();
+    if (!name) return;
+    onAddExtraExercise({
+      name,
+      defaultSets: Number(newExercise.defaultSets) || 3,
+      targetReps: newExercise.targetReps || '10',
+      suggestedWeight: newExercise.suggestedWeight || '10 kg',
+      tips: ''
+    });
+    setNewExercise({ name: '', defaultSets: 3, targetReps: '8-10', suggestedWeight: '10 kg' });
+    setIsAddingExercise(false);
+  };
+
   let totalSetsCount = 0;
   let completedSetsCount = 0;
   let totalVolumeKg = 0;
 
-  selectedDay.exercises.forEach((ex) => {
+  allExercises.forEach((ex) => {
     const sets = getExerciseSets(ex);
     sets.forEach((s) => {
       totalSetsCount++;
@@ -181,7 +204,7 @@ export default function WorkoutLogger({
         )}
       </div>
 
-      {selectedDay.exercises.map((ex, exIdx) => {
+      {allExercises.map((ex, exIdx) => {
         const sets = getExerciseSets(ex);
         const isTipOpen = !!showTipsMap[ex.id];
 
@@ -220,6 +243,23 @@ export default function WorkoutLogger({
               >
                 <Info size={16} />
               </button>
+
+              {isExtraExercise(ex) && (
+                <button
+                  onClick={() => onRemoveExtraExercise(ex.id)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#EF4444',
+                    cursor: 'pointer',
+                    padding: '2px',
+                    marginLeft: '2px'
+                  }}
+                  title="Hareketi kaldır"
+                >
+                  <Trash2 size={15} />
+                </button>
+              )}
             </div>
 
             {isTipOpen && (
@@ -293,9 +333,151 @@ export default function WorkoutLogger({
         );
       })}
 
+      {/* Extra Exercise (Ad-hoc) Card */}
+      <div className="card" style={{ padding: '12px 14px' }}>
+        {!isAddingExercise ? (
+          <button
+            onClick={() => setIsAddingExercise(true)}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              background: 'var(--bg-card-alt)',
+              border: '1px dashed var(--border-color)',
+              borderRadius: '8px',
+              padding: '10px',
+              color: 'var(--primary)',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            <Plus size={15} /> Yeni Hareket Ekle
+          </button>
+        ) : (
+          <>
+            <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FAFAFA', marginBottom: '8px' }}>
+              Yeni Hareket Ekle
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <input
+                autoFocus
+                type="text"
+                placeholder="Hareket adı (ör: Dumbbell Front Raise)"
+                value={newExercise.name}
+                onChange={(e) => setNewExercise((prev) => ({ ...prev, name: e.target.value }))}
+                style={{
+                  width: '100%',
+                  background: 'var(--bg-black)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  padding: '8px',
+                  color: '#FAFAFA',
+                  fontSize: '0.8rem',
+                  outline: 'none'
+                }}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Set"
+                  value={newExercise.defaultSets}
+                  onChange={(e) => setNewExercise((prev) => ({ ...prev, defaultSets: e.target.value }))}
+                  style={{
+                    background: 'var(--bg-black)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '8px',
+                    color: '#FAFAFA',
+                    fontSize: '0.8rem',
+                    textAlign: 'center',
+                    outline: 'none'
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="Tekrar (8-10)"
+                  value={newExercise.targetReps}
+                  onChange={(e) => setNewExercise((prev) => ({ ...prev, targetReps: e.target.value }))}
+                  style={{
+                    background: 'var(--bg-black)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '8px',
+                    color: '#FAFAFA',
+                    fontSize: '0.8rem',
+                    textAlign: 'center',
+                    outline: 'none'
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="Ağırlık (kg)"
+                  value={newExercise.suggestedWeight}
+                  onChange={(e) => setNewExercise((prev) => ({ ...prev, suggestedWeight: e.target.value }))}
+                  style={{
+                    background: 'var(--bg-black)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '8px',
+                    color: '#FAFAFA',
+                    fontSize: '0.8rem',
+                    textAlign: 'center',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <button
+                  onClick={handleAddExercise}
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                    border: 'none',
+                    color: '#fff',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    fontWeight: 800,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  HAREKETİ EKLE
+                </button>
+                <button
+                  onClick={() => setIsAddingExercise(false)}
+                  style={{
+                    background: 'var(--bg-card-alt)',
+                    border: '1px solid var(--border-color)',
+                    color: '#A1A1AA',
+                    borderRadius: '8px',
+                    padding: '10px 16px',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Vazgeç
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Completion Card */}
       <div className="card">
-        <h3 className="card-title">Antrenman Özeti</h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <h3 className="card-title" style={{ margin: 0 }}>Antrenman Özeti</h3>
+          {workoutCompleted && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.68rem', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', padding: '3px 9px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+              <CheckCircle2 size={13} /> KAYDEDİLDİ
+            </span>
+          )}
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
           <div className="stat-box">

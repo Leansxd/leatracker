@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PRESET_PROGRAMS } from './data/programPresets';
 import WorkoutLogger from './components/WorkoutLogger';
 import HistoryAnalytics from './components/HistoryAnalytics';
@@ -7,7 +7,11 @@ import ProgramManagerModal from './components/ProgramManagerModal';
 import RestTimer from './components/RestTimer';
 import DailyMacroTracker from './components/DailyMacroTracker';
 import WeightChart from './components/WeightChart';
-import { Dumbbell, History, Settings, Scale, Utensils, ChevronLeft, ChevronRight, Calendar, Plus, Check, Layers, User } from 'lucide-react';
+import AuthScreen from './components/AuthScreen';
+import DrawerMenu from './components/DrawerMenu';
+import { useAuth } from './context/AuthContext';
+import { loadUserData, saveUserData } from './services/userData';
+import { Dumbbell, History, Scale, Utensils, ChevronLeft, ChevronRight, Calendar, Plus, Check, Layers, User, Menu, Flame, Droplets } from 'lucide-react';
 
 const STORAGE_KEY_PROFILES = 'letracker_profiles_v3';
 const STORAGE_KEY_ACTIVE_PROFILE = 'letracker_active_profile_v3';
@@ -32,8 +36,25 @@ const DEFAULT_PROFILES = [
   }
 ];
 
+const toLocalDateStr = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const parseLocalDate = (dateStr) => new Date(`${dateStr}T00:00:00`);
+
+const WEEKDAYS_TR = ['PAZAR', 'PAZARTESİ', 'SALI', 'ÇARŞAMBA', 'PERŞEMBE', 'CUMA', 'CUMARTESİ'];
+
+const getWeekdayForDate = (dateStr) => {
+  const d = parseLocalDate(dateStr);
+  return WEEKDAYS_TR[d.getDay()];
+};
+
 export default function App() {
-  const getTodayStr = useCallback(() => new Date().toISOString().split('T')[0], []);
+  const { user, loading, logout } = useAuth();
+  const getTodayStr = useCallback(() => toLocalDateStr(new Date()), []);
 
   const [selectedDate, setSelectedDate] = useState(getTodayStr());
 
@@ -91,6 +112,7 @@ export default function App() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isProgramModalOpen, setIsProgramModalOpen] = useState(false);
   const [isTimerOpen, setIsTimerOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [inputWeight, setInputWeight] = useState('');
   const [weightSavedFeedback, setWeightSavedFeedback] = useState(false);
 
@@ -118,6 +140,90 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(logsHistory));
   }, [logsHistory]);
 
+  const hydratedRef = useRef(false);
+  const saveTimeoutRef = useRef(null);
+  const userRef = useRef(null);
+  const dailyDataMapRef = useRef(dailyDataMap);
+  const logsHistoryRef = useRef(logsHistory);
+
+  useEffect(() => {
+    dailyDataMapRef.current = dailyDataMap;
+  }, [dailyDataMap]);
+
+  useEffect(() => {
+    logsHistoryRef.current = logsHistory;
+  }, [logsHistory]);
+
+  const getDataSnapshot = () => ({
+    profiles,
+    activeProfileId,
+    customPrograms,
+    activeProgramId,
+    dailyDataMap,
+    logsHistory
+  });
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  const flushPendingSave = () => {
+    if (!userRef.current || !hydratedRef.current) return;
+    clearTimeout(saveTimeoutRef.current);
+    saveUserData(userRef.current.uid, getDataSnapshot()).catch((err) => {
+      console.warn('Firestore veri kaydedilemedi:', err);
+    });
+  };
+
+  const handleLogout = async () => {
+    flushPendingSave();
+    await logout();
+  };
+
+  useEffect(() => {
+    hydratedRef.current = false;
+    if (!user) {
+      hydratedRef.current = true;
+      return undefined;
+    }
+    if (!loadUserData) return undefined;
+
+    let cancelled = false;
+    loadUserData(user.uid)
+      .then((data) => {
+        if (cancelled) return;
+        if (data) {
+          if (data.profiles) setProfiles(data.profiles);
+          if (data.activeProfileId) setActiveProfileId(data.activeProfileId);
+          if (data.customPrograms) setCustomPrograms(data.customPrograms);
+          if (data.activeProgramId) setActiveProgramId(data.activeProgramId);
+          if (data.dailyDataMap) setDailyDataMap(data.dailyDataMap);
+          if (data.logsHistory) setLogsHistory(data.logsHistory);
+        }
+        hydratedRef.current = true;
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.warn('Firestore veri yüklenemedi:', err);
+        hydratedRef.current = true;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !hydratedRef.current) return undefined;
+    clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      saveUserData(user.uid, getDataSnapshot()).catch((err) => {
+        console.warn('Firestore veri kaydedilemedi:', err);
+      });
+    }, 800);
+    return () => clearTimeout(saveTimeoutRef.current);
+  });
+
   useEffect(() => {
     if (!activeDays.some((d) => d.id === selectedDayId)) {
       setSelectedDayId(activeDays[0]?.id || 'day1');
@@ -140,15 +246,15 @@ export default function App() {
 
   const shiftDate = useCallback((days) => {
     setSelectedDate((prevDate) => {
-      const d = new Date(prevDate);
+      const d = parseLocalDate(prevDate);
       d.setDate(d.getDate() + days);
-      return d.toISOString().split('T')[0];
+      return toLocalDateStr(d);
     });
   }, []);
 
   const formatDateDisplay = useCallback((dateStr) => {
     const today = getTodayStr();
-    const d = new Date(dateStr);
+    const d = parseLocalDate(dateStr);
     const formatted = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'short' });
     if (dateStr === today) return `${formatted} (Bugün)`;
     return formatted;
@@ -170,18 +276,37 @@ export default function App() {
     });
   }, [selectedDate]);
 
-  const handleUpdateDailyLog = useCallback((updates) => {
-    setDailyDataMap((prev) => {
-      const dayRecord = prev[selectedDate] || {};
-      return {
-        ...prev,
+  const handleUpdateDailyLog = useCallback(
+    (updates) => {
+      const currentMap = dailyDataMapRef.current;
+      const dayRecord = currentMap[selectedDate] || {};
+      const nextMap = {
+        ...currentMap,
         [selectedDate]: {
           ...dayRecord,
           ...updates
         }
       };
-    });
-  }, [selectedDate]);
+      dailyDataMapRef.current = nextMap;
+      setDailyDataMap(nextMap);
+
+      const uid = userRef.current?.uid;
+      if (uid) {
+        saveUserData(uid, {
+          profiles,
+          activeProfileId,
+          customPrograms,
+          activeProgramId,
+          dailyDataMap: nextMap,
+          logsHistory: logsHistoryRef.current
+        }).catch((err) => {
+          console.warn('Firestore veri kaydedilemedi:', err);
+        });
+      }
+      clearTimeout(saveTimeoutRef.current);
+    },
+    [selectedDate, profiles, activeProfileId, customPrograms, activeProgramId]
+  );
 
   const handleSaveWeight = (e) => {
     e.preventDefault();
@@ -197,49 +322,193 @@ export default function App() {
     setTimeout(() => setWeightSavedFeedback(false), 2000);
   };
 
-  const handleFinishWorkout = useCallback((day, notes) => {
-    const workoutData = currentDayData.workoutData || {};
-    let totalVolumeKg = 0;
-    let completedSetsCount = 0;
-
-    (day.exercises || []).forEach((ex) => {
-      const sets = workoutData[ex.id] || [];
-      sets.forEach((s) => {
-        if (s.completed) {
-          completedSetsCount++;
-          totalVolumeKg += (Number(s.weight) || 0) * (Number(s.reps) || 0);
-        }
-      });
+  const weekdayMap = useMemo(() => {
+    const map = {};
+    (activeDays || []).forEach((day) => {
+      const m = (day.dayName || '').match(/\(([^)]+)\)/);
+      if (m) map[m[1].trim().toUpperCase()] = day.id;
     });
+    return map;
+  }, [activeDays]);
 
-    const newLog = {
-      id: Date.now(),
-      dateStr: formatDateDisplay(selectedDate),
-      date: selectedDate,
-      timestamp: Date.now(),
-      programName: activeProgram.name,
-      dayId: day.id,
-      dayName: day.dayName,
-      title: day.title,
-      totalVolumeKg,
-      completedSetsCount,
-      notes,
-      workoutData
-    };
+  const hasSchedule = Object.keys(weekdayMap).length > 0;
 
-    setLogsHistory((prev) => [newLog, ...prev]);
-    alert(`🎉 ${formatDateDisplay(selectedDate)} antrenmanı başarıyla kaydedildi!`);
-  }, [currentDayData.workoutData, formatDateDisplay, selectedDate, activeProgram.name]);
+  const scheduledDayId = useMemo(() => weekdayMap[getWeekdayForDate(selectedDate)], [weekdayMap, selectedDate]);
 
   const selectedDay = useMemo(() => {
-    return activeDays.find((d) => d.id === selectedDayId) || activeDays[0];
-  }, [activeDays, selectedDayId]);
+    const effectiveId = hasSchedule && scheduledDayId ? scheduledDayId : selectedDayId;
+    return activeDays.find((d) => d.id === effectiveId) || activeDays[0];
+  }, [activeDays, selectedDayId, hasSchedule, scheduledDayId]);
+
+  const extraExercises = useMemo(() => {
+    const map = currentDayData.extraExercises || {};
+    return selectedDay ? map[selectedDay.id] || [] : [];
+  }, [currentDayData, selectedDay]);
+
+  const effectiveExercises = useMemo(() => {
+    return [...(selectedDay?.exercises || []), ...extraExercises];
+  }, [selectedDay, extraExercises]);
+
+  const handleAddExtraExercise = useCallback((exercise) => {
+    setDailyDataMap((prev) => {
+      const dayRecord = prev[selectedDate] || {};
+      const exMap = dayRecord.extraExercises || {};
+      const dayId = selectedDay?.id || 'day1';
+      const list = exMap[dayId] || [];
+      return {
+        ...prev,
+        [selectedDate]: {
+          ...dayRecord,
+          extraExercises: {
+            ...exMap,
+            [dayId]: [...list, { id: `extra_${Date.now()}`, tag: 'Ek Hareket', ...exercise }]
+          }
+        }
+      };
+    });
+  }, [selectedDate, selectedDay]);
+
+  const handleRemoveExtraExercise = useCallback((exId) => {
+    setDailyDataMap((prev) => {
+      const dayRecord = prev[selectedDate] || {};
+      const exMap = dayRecord.extraExercises || {};
+      const dayId = selectedDay?.id || 'day1';
+      const list = exMap[dayId] || [];
+      return {
+        ...prev,
+        [selectedDate]: {
+          ...dayRecord,
+          extraExercises: {
+            ...exMap,
+            [dayId]: list.filter((e) => e.id !== exId)
+          }
+        }
+      };
+    });
+  }, [selectedDate, selectedDay]);
+
+  const handleFinishWorkout = useCallback(
+    (day, notes) => {
+      const workoutData = currentDayData.workoutData || {};
+      let totalVolumeKg = 0;
+      let completedSetsCount = 0;
+
+      effectiveExercises.forEach((ex) => {
+        const sets = workoutData[ex.id] || [];
+        sets.forEach((s) => {
+          if (s.completed) {
+            completedSetsCount++;
+            totalVolumeKg += (Number(s.weight) || 0) * (Number(s.reps) || 0);
+          }
+        });
+      });
+
+      const newLog = {
+        id: Date.now(),
+        dateStr: formatDateDisplay(selectedDate),
+        date: selectedDate,
+        timestamp: Date.now(),
+        programName: activeProgram.name,
+        dayId: day.id,
+        dayName: day.dayName,
+        title: day.title,
+        totalVolumeKg,
+        completedSetsCount,
+        notes,
+        workoutData,
+        extraExercises
+      };
+
+      const nextLogs = [newLog, ...logsHistoryRef.current];
+      const currentMap = dailyDataMapRef.current;
+      const nextDailyMap = {
+        ...currentMap,
+        [selectedDate]: {
+          ...(currentMap[selectedDate] || currentDayData),
+          workoutCompleted: true,
+          lastWorkoutAt: Date.now(),
+          completedSetsCount,
+          totalVolumeKg
+        }
+      };
+      logsHistoryRef.current = nextLogs;
+      dailyDataMapRef.current = nextDailyMap;
+
+      setLogsHistory(nextLogs);
+      setDailyDataMap(nextDailyMap);
+
+      const uid = userRef.current?.uid;
+      if (uid) {
+        saveUserData(uid, {
+          profiles,
+          activeProfileId,
+          customPrograms,
+          activeProgramId,
+          dailyDataMap: nextDailyMap,
+          logsHistory: nextLogs
+        }).catch((err) => {
+          console.warn('Firestore veri kaydedilemedi:', err);
+        });
+      }
+      clearTimeout(saveTimeoutRef.current);
+
+      alert(`🎉 ${formatDateDisplay(selectedDate)} antrenmanı başarıyla kaydedildi!`);
+    },
+    [
+      currentDayData,
+      effectiveExercises,
+      extraExercises,
+      formatDateDisplay,
+      selectedDate,
+      activeProgram.name,
+      profiles,
+      activeProfileId,
+      customPrograms,
+      activeProgramId
+    ]
+  );
 
   const weightLogsForChart = useMemo(() => {
     return Object.keys(dailyDataMap)
       .filter((date) => dailyDataMap[date].weight)
       .map((date) => ({ date, weight: dailyDataMap[date].weight }));
   }, [dailyDataMap]);
+
+  const dailySummary = useMemo(() => {
+    const meals = currentDayData.meals || [];
+    const mealCalories = meals.reduce((a, m) => a + (Number(m.calories) || 0), 0);
+    const mealProtein = meals.reduce((a, m) => a + (Number(m.protein) || 0), 0);
+    const calories = Math.max(currentDayData.calories || 0, mealCalories);
+    const protein = Math.max(currentDayData.protein || 0, mealProtein);
+    const water = currentDayData.water || 0;
+
+    const workout = currentDayData.workoutData || {};
+    let totalSets = 0;
+    let completedSets = 0;
+    let volumeKg = 0;
+    effectiveExercises.forEach((ex) => {
+      const sets = workout[ex.id] || [];
+      sets.forEach((s) => {
+        totalSets++;
+        if (s.completed) {
+          completedSets++;
+          volumeKg += (Number(s.weight) || 0) * (Number(s.reps) || 0);
+        }
+      });
+    });
+
+    return {
+      calories,
+      protein,
+      water,
+      totalSets,
+      completedSets,
+      volumeKg,
+      calPct: Math.min(100, Math.round((calories / (activeProfile.targetCalories || 2550)) * 100)),
+      protPct: Math.min(100, Math.round((protein / (activeProfile.targetProtein || 130)) * 100)),
+      waterPct: Math.min(100, Math.round((water / (activeProfile.targetWater || 3)) * 100))
+    };
+  }, [currentDayData, effectiveExercises, activeProfile.targetCalories, activeProfile.targetProtein, activeProfile.targetWater]);
 
   const handleSaveProfile = (savedProfile) => {
     setProfiles((prev) => {
@@ -279,52 +548,50 @@ export default function App() {
     alert('🎯 Profilinize en uygun antrenman programı seçildi ve hedefleriniz güncellendi!');
   };
 
+  if (loading) {
+    return (
+      <div className="auth-loading">
+        <div className="auth-loading-spinner" />
+        <p>Yükleniyor...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen />;
+  }
+
   return (
     <div className="app-container">
-      <header className="top-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div className="brand">
-            <Dumbbell size={18} color="#38BDF8" /> LETRACKER
-          </div>
+<header className="app-header">
+        <div className="app-title">LeaTracker</div>
+        <div className="header-row">
           <button
-            onClick={() => setIsProgramModalOpen(true)}
-            style={{
-              background: 'linear-gradient(145deg, #18181B, #27272A)',
-              border: '1px solid var(--border-subtle)',
-              color: '#38BDF8',
-              padding: '4px 10px',
-              borderRadius: '20px',
-              cursor: 'pointer',
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-            }}
+            onClick={() => setIsDrawerOpen(true)}
+            className="hamburger-btn"
+            aria-label="Menü"
           >
-            <Layers size={13} /> {activeProgram.name.split('(')[0].trim()}
+            <Menu size={20} />
           </button>
+          <div className="header-right">
+            <button
+              className="header-chip"
+              onClick={() => setIsProgramModalOpen(true)}
+              title="Antrenman programı"
+            >
+              <Layers size={13} color="var(--primary)" />
+              <span className="header-chip-text">{activeProgram.name.split('(')[0].trim()}</span>
+            </button>
+            <button
+              className="header-chip"
+              onClick={() => setIsProfileModalOpen(true)}
+              title="Profil"
+            >
+              <User size={13} color="var(--primary)" />
+              <span className="header-chip-text">{activeProfile.name}</span>
+            </button>
+          </div>
         </div>
-
-        <button
-          onClick={() => setIsProfileModalOpen(true)}
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            color: '#FAFAFA',
-            padding: '5px 10px',
-            borderRadius: '20px',
-            cursor: 'pointer',
-            fontSize: '0.72rem',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px'
-          }}
-        >
-          <User size={13} color="#38BDF8" /> {activeProfile.name}
-        </button>
       </header>
 
       <div className="date-bar">
@@ -338,33 +605,60 @@ export default function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          {selectedDate !== getTodayStr() && (
-            <button
-              onClick={() => setSelectedDate(getTodayStr())}
-              style={{ background: 'var(--surface-alt)', border: '1px solid var(--border-subtle)', color: '#FAFAFA', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', cursor: 'pointer' }}
-            >
-              Bugün
-            </button>
-          )}
           <button onClick={() => shiftDate(1)} className="date-btn">
             <ChevronRight size={20} />
           </button>
         </div>
       </div>
 
+      <div className="card daily-summary">
+        <div className="daily-summary-title">
+          <Calendar size={12} /> Günün Hesaplaması
+        </div>
+        <div className="daily-summary-grid">
+          <div className="summary-stat">
+            <span className="summary-stat-label"><Flame size={11} /> Kalori</span>
+            <span className="summary-stat-value">{dailySummary.calories.toLocaleString('tr-TR')} <em>/ {activeProfile.targetCalories} kcal</em></span>
+            <div className="progress-track"><div className="progress-fill progress-kcal" style={{ width: `${dailySummary.calPct}%` }} /></div>
+          </div>
+          <div className="summary-stat">
+            <span className="summary-stat-label"><Utensils size={11} /> Protein</span>
+            <span className="summary-stat-value">{dailySummary.protein} <em>/ {activeProfile.targetProtein} g</em></span>
+            <div className="progress-track"><div className="progress-fill progress-protein" style={{ width: `${dailySummary.protPct}%` }} /></div>
+          </div>
+          <div className="summary-stat">
+            <span className="summary-stat-label"><Droplets size={11} /> Su</span>
+            <span className="summary-stat-value">{dailySummary.water} <em>/ {activeProfile.targetWater} L</em></span>
+            <div className="progress-track"><div className="progress-fill progress-water" style={{ width: `${dailySummary.waterPct}%` }} /></div>
+          </div>
+          <div className="summary-stat">
+            <span className="summary-stat-label"><Dumbbell size={11} /> Hacim</span>
+            <span className="summary-stat-value">{dailySummary.volumeKg.toLocaleString('tr-TR')} <em>kg</em></span>
+            <div className="summary-stat-foot">{dailySummary.completedSets}/{dailySummary.totalSets} set</div>
+          </div>
+        </div>
+      </div>
+
       {activeTab === 'workout' && (
         <>
-          <div className="day-selector-scroll">
-            {activeDays.map((day) => (
-              <div
-                key={day.id}
-                className={`day-pill ${selectedDayId === day.id ? 'active' : ''}`}
-                onClick={() => setSelectedDayId(day.id)}
-              >
-                {day.dayName.split(' ')[0]} {day.dayName.split(' ')[1] || ''}
-              </div>
-            ))}
-          </div>
+          {hasSchedule ? (
+            <div className="schedule-note">
+              <Calendar size={13} color="var(--primary)" />
+              <span>Takvime göre: {selectedDay.dayName}</span>
+            </div>
+          ) : (
+            <div className="day-selector-scroll">
+              {activeDays.map((day) => (
+                <div
+                  key={day.id}
+                  className={`day-pill ${selectedDayId === day.id ? 'active' : ''}`}
+                  onClick={() => setSelectedDayId(day.id)}
+                >
+                  {day.dayName.split(' ')[0]} {day.dayName.split(' ')[1] || ''}
+                </div>
+              ))}
+            </div>
+          )}
 
           <WorkoutLogger
             selectedDay={selectedDay}
@@ -373,6 +667,10 @@ export default function App() {
             onFinishWorkout={handleFinishWorkout}
             onOpenTimer={() => setIsTimerOpen(true)}
             previousLogs={logsHistory}
+            extraExercises={extraExercises}
+            workoutCompleted={currentDayData.workoutCompleted}
+            onAddExtraExercise={handleAddExtraExercise}
+            onRemoveExtraExercise={handleRemoveExtraExercise}
           />
         </>
       )}
@@ -393,7 +691,7 @@ export default function App() {
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Scale size={16} color="#38BDF8" />
+              <Scale size={16} color="#3B82F6" />
               <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#FAFAFA' }}>
                 {selectedDate} Kilosu:
               </span>
@@ -482,6 +780,17 @@ export default function App() {
       <RestTimer
         isOpen={isTimerOpen}
         onClose={() => setIsTimerOpen(false)}
+      />
+
+      <DrawerMenu
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenTimer={() => setIsTimerOpen(true)}
+        profileName={activeProfile.name}
+        onLogout={handleLogout}
       />
 
       {isProfileModalOpen && (

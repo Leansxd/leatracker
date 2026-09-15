@@ -55,59 +55,35 @@ export default function DailyMacroTracker({ dailyLog, onUpdateDailyLog, profile 
 
   return (
     <div className="glass-panel" style={{ padding: '20px', marginBottom: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#F1F5F9', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Flame size={18} color="#FF9100" /> Günlük Beslenme & Takviye Takibi
-        </h3>
-        <button
-          onClick={() => setIsAddFoodOpen(true)}
-          style={{
-            background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(112, 0, 255, 0.2))',
-            border: '1px solid rgba(0, 229, 255, 0.4)',
-            color: '#00E5FF',
-            padding: '6px 12px',
-            borderRadius: '10px',
-            cursor: 'pointer',
-            fontSize: '0.78rem',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          <Plus size={14} /> Besin / Öğün Ekle
-        </button>
-      </div>
-
       {/* Progress Bars */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
         {/* Kalori Progress Bar */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
-            <span style={{ color: '#94A3B8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Flame size={14} color="#FF9100" /> Kalori
+            <span style={{ color: '#A1A7B3', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Flame size={14} color="#F59E0B" /> Kalori
             </span>
-            <strong style={{ color: '#FF9100' }}>
+            <strong style={{ color: '#F59E0B' }}>
               {calories} / {profile.targetCalories} kcal ({calPct}%)
             </strong>
           </div>
           <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '999px', overflow: 'hidden' }}>
-            <div style={{ width: `${calPct}%`, height: '100%', background: 'linear-gradient(90deg, #FF9100, #FF5252)', transition: 'width 0.3s ease' }} />
+            <div style={{ width: `${calPct}%`, height: '100%', background: 'linear-gradient(90deg, #F59E0B, #EF4444)', transition: 'width 0.3s ease' }} />
           </div>
         </div>
 
         {/* Protein Progress Bar */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
-            <span style={{ color: '#94A3B8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Activity size={14} color="#00E676" /> Protein
+            <span style={{ color: '#A1A7B3', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Activity size={14} color="#10B981" /> Protein
             </span>
-            <strong style={{ color: '#00E676' }}>
+            <strong style={{ color: '#10B981' }}>
               {protein} / {profile.targetProtein} g ({protPct}%)
             </strong>
           </div>
           <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '999px', overflow: 'hidden' }}>
-            <div style={{ width: `${protPct}%`, height: '100%', background: 'linear-gradient(90deg, #00E676, #00B0FF)', transition: 'width 0.3s ease' }} />
+            <div style={{ width: `${protPct}%`, height: '100%', background: 'linear-gradient(90deg, #10B981, #3B82F6)', transition: 'width 0.3s ease' }} />
           </div>
         </div>
       </div>
@@ -117,9 +93,9 @@ export default function DailyMacroTracker({ dailyLog, onUpdateDailyLog, profile 
         {/* Su Tracker */}
         <div className="metric-card">
           <div className="metric-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-            <Droplets size={12} color="#00E5FF" /> Su (L)
+            <Droplets size={12} color="#3B82F6" /> Su (L)
           </div>
-          <div className="metric-value" style={{ color: '#00E5FF', margin: '4px 0', fontSize: '0.85rem' }}>
+          <div className="metric-value" style={{ color: '#3B82F6', margin: '4px 0', fontSize: '0.85rem' }}>
             {water} / {profile.targetWater} L
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
@@ -138,9 +114,9 @@ export default function DailyMacroTracker({ dailyLog, onUpdateDailyLog, profile 
             justify: 'center',
             padding: '8px',
             borderRadius: '10px',
-            border: `1px solid ${tookCreatine ? '#00E676' : 'var(--border-color)'}`,
-            background: tookCreatine ? 'rgba(0, 230, 118, 0.12)' : 'rgba(15, 23, 42, 0.5)',
-            color: tookCreatine ? '#00E676' : 'var(--text-muted)',
+            border: `1px solid ${tookCreatine ? '#10B981' : 'var(--border-color)'}`,
+            background: tookCreatine ? 'rgba(16, 185, 129, 0.12)' : 'rgba(15, 23, 42, 0.5)',
+            color: tookCreatine ? '#10B981' : 'var(--text-muted)',
             fontSize: '0.72rem',
             fontWeight: 700,
             cursor: 'pointer'
@@ -160,9 +136,9 @@ export default function DailyMacroTracker({ dailyLog, onUpdateDailyLog, profile 
             justify: 'center',
             padding: '8px',
             borderRadius: '10px',
-            border: `1px solid ${tookPreworkout ? '#B388FF' : 'var(--border-color)'}`,
+            border: `1px solid ${tookPreworkout ? '#6366F1' : 'var(--border-color)'}`,
             background: tookPreworkout ? 'rgba(179, 136, 255, 0.12)' : 'rgba(15, 23, 42, 0.5)',
-            color: tookPreworkout ? '#B388FF' : 'var(--text-muted)',
+            color: tookPreworkout ? '#6366F1' : 'var(--text-muted)',
             fontSize: '0.72rem',
             fontWeight: 700,
             cursor: 'pointer'
@@ -173,10 +149,35 @@ export default function DailyMacroTracker({ dailyLog, onUpdateDailyLog, profile 
         </button>
       </div>
 
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#F4F6F8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Flame size={18} color="#F59E0B" /> Günlük Beslenme & Takviye Takibi
+        </h3>
+        <button
+          onClick={() => setIsAddFoodOpen(true)}
+          style={{
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.15))',
+            border: '1px solid rgba(59, 130, 246, 0.4)',
+            color: '#3B82F6',
+            padding: '6px 12px',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <Plus size={14} /> Besin / Öğün Ekle
+        </button>
+      </div>
+
       {/* Logged Meals List */}
       {meals.length > 0 && (
         <div style={{ marginTop: '12px' }}>
-          <div style={{ fontSize: '0.78rem', color: '#94A3B8', fontWeight: 700, marginBottom: '8px' }}>
+          <div style={{ fontSize: '0.78rem', color: '#A1A7B3', fontWeight: 700, marginBottom: '8px' }}>
             🥗 BUGÜN EKLENEN ÖĞÜNLER ({meals.length})
           </div>
 
@@ -195,21 +196,21 @@ export default function DailyMacroTracker({ dailyLog, onUpdateDailyLog, profile 
                 }}
               >
                 <div>
-                  <span style={{ fontSize: '0.68rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(0,229,255,0.15)', color: '#00E5FF', fontWeight: 700, marginRight: '6px' }}>
+                  <span style={{ fontSize: '0.68rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6', fontWeight: 700, marginRight: '6px' }}>
                     {item.meal}
                   </span>
-                  <strong style={{ fontSize: '0.82rem', color: '#F1F5F9' }}>{item.name}</strong>
+                  <strong style={{ fontSize: '0.82rem', color: '#F4F6F8' }}>{item.name}</strong>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{ fontSize: '0.75rem', textAlign: 'right' }}>
-                    <span style={{ color: '#FF9100', fontWeight: 700 }}>{item.calories} kcal</span>
-                    <span style={{ color: '#64748B', margin: '0 4px' }}>•</span>
-                    <span style={{ color: '#00E676', fontWeight: 700 }}>{item.protein}g P</span>
+                    <span style={{ color: '#F59E0B', fontWeight: 700 }}>{item.calories} kcal</span>
+                    <span style={{ color: '#6E7683', margin: '0 4px' }}>•</span>
+                    <span style={{ color: '#10B981', fontWeight: 700 }}>{item.protein}g P</span>
                   </div>
                   <button
                     onClick={() => handleRemoveFood(item.id)}
-                    style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer' }}
+                    style={{ background: 'transparent', border: 'none', color: '#6E7683', cursor: 'pointer' }}
                   >
                     <Trash2 size={14} />
                   </button>

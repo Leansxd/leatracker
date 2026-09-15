@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, Check, Plus, Trash2, Dumbbell, Sparkles, ChevronDown, ChevronUp, Layers, BookOpen, AlertCircle } from 'lucide-react';
 import { PRESET_PROGRAMS } from '../data/programPresets';
 
@@ -12,6 +12,44 @@ export default function ProgramManagerModal({
 }) {
   const [activeTab, setActiveTab] = useState('presets');
   const [expandedProgramId, setExpandedProgramId] = useState(null);
+
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const dragStartRef = useRef(0);
+  const dragYRef = useRef(0);
+
+  const handlePointerDown = (e) => {
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    dragStartRef.current = e.clientY;
+    dragYRef.current = 0;
+    setIsDragging(true);
+    setIsClosing(false);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDragging) return;
+    const dy = Math.max(0, e.clientY - dragStartRef.current);
+    dragYRef.current = dy;
+    setDragY(dy);
+  };
+
+  const handlePointerUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    if (dragYRef.current > 110) {
+      animateClose();
+    } else {
+      setDragY(0);
+    }
+  };
+
+  const animateClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setDragY(window.innerHeight);
+    setTimeout(onClose, 290);
+  };
 
   const [customName, setCustomName] = useState('');
   const [customDesc, setCustomDesc] = useState('');
@@ -176,15 +214,29 @@ export default function ProgramManagerModal({
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="glass-panel modal-content" style={{ maxWidth: '520px', maxHeight: '88vh', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+    <div className="sheet-overlay" onClick={animateClose}>
+      <div
+        className="sheet-panel"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          transform: `translateY(${dragY}px)`,
+          transition: isDragging ? 'none' : isClosing ? 'transform 0.26s ease-in' : 'transform 0.3s ease'
+        }}
+      >
+        <div
+          className="sheet-grabber"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
+          <div className="sheet-grabber-handle" />
+        </div>
+        <div className="sheet-content" style={{ maxHeight: 'calc(90vh - 36px)', overflowY: 'auto' }}>
+        <div style={{ marginBottom: '14px' }}>
           <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Layers size={20} color="#38BDF8" /> Antrenman Programı Seç & Oluştur
+            <Layers size={20} color="#3B82F6" /> Antrenman Programı Seç & Oluştur
           </h2>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-sub)', cursor: 'pointer' }}>
-            <X size={20} />
-          </button>
         </div>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', background: 'var(--surface-alt)', padding: '4px', borderRadius: '10px' }}>
@@ -200,7 +252,7 @@ export default function ProgramManagerModal({
               fontSize: '0.8rem',
               cursor: 'pointer',
               background: activeTab === 'presets' ? 'var(--surface)' : 'transparent',
-              color: activeTab === 'presets' ? '#38BDF8' : 'var(--text-sub)',
+              color: activeTab === 'presets' ? '#3B82F6' : 'var(--text-sub)',
               boxShadow: activeTab === 'presets' ? '0 2px 8px rgba(0,0,0,0.3)' : 'none',
               transition: 'all 0.2s ease'
             }}
@@ -242,7 +294,7 @@ export default function ProgramManagerModal({
                   key={prog.id}
                   style={{
                     background: isActive ? 'linear-gradient(145deg, #18181B, #1E293B)' : 'var(--surface)',
-                    border: isActive ? '1px solid #38BDF8' : '1px solid var(--border)',
+                    border: isActive ? '1px solid #3B82F6' : '1px solid var(--border)',
                     borderRadius: '12px',
                     padding: '12px 14px',
                     transition: 'all 0.2s ease'
@@ -260,7 +312,7 @@ export default function ProgramManagerModal({
                           </span>
                         )}
                         {prog.isCustom && (
-                          <span style={{ background: 'var(--surface-alt)', color: '#38BDF8', fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
+                          <span style={{ background: 'var(--surface-alt)', color: '#3B82F6', fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
                             ÖZEL
                           </span>
                         )}
@@ -306,8 +358,8 @@ export default function ProgramManagerModal({
                             onClose();
                           }}
                           style={{
-                            background: '#38BDF8',
-                            color: '#09090B',
+                            background: '#3B82F6',
+                            color: '#fff',
                             border: 'none',
                             padding: '6px 12px',
                             borderRadius: '8px',
@@ -339,32 +391,42 @@ export default function ProgramManagerModal({
 
                   {isExpanded && (
                     <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#38BDF8', textTransform: 'uppercase' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase' }}>
                         Günlük Antrenman Dağılımı:
                       </div>
-                      {prog.days.map((day, idx) => (
-                        <div
-                          key={day.id || idx}
-                          style={{
-                            background: 'var(--surface-alt)',
-                            borderRadius: '6px',
-                            padding: '8px 10px',
-                            fontSize: '0.75rem'
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{day.dayName}: {day.title}</span>
-                            <span style={{ color: day.isRest ? '#A1A1AA' : '#10B981', fontSize: '0.7rem', fontWeight: 700 }}>
-                              {day.isRest ? 'Dinlenme' : `${day.exercises?.length || 0} Hareket`}
-                            </span>
-                          </div>
-                          {!day.isRest && day.exercises && (
-                            <div style={{ color: 'var(--text-sub)', fontSize: '0.7rem', marginTop: '4px' }}>
-                              {day.exercises.map(e => e.name).join(' • ')}
+                      {prog.days.map((day, idx) => {
+                        const numMatch = (day.dayName || '').match(/^(\d+)/);
+                        const dayNum = numMatch ? numMatch[1] : idx + 1;
+                        const weekdayMatch = (day.dayName || '').match(/\(([^)]+)\)/);
+                        const weekday = weekdayMatch ? weekdayMatch[1] : '';
+                        const isRest = !!day.isRest;
+                        return (
+                          <div key={day.id || idx} className={`prog-day${isRest ? ' rest' : ''}`}>
+                            <div className="prog-day-head">
+                              <div className="prog-day-num">{dayNum}</div>
+                              <div className="prog-day-body">
+                                {weekday && (
+                                  <div className="prog-day-name">{weekday}</div>
+                                )}
+                                <div className="prog-day-title">{day.title}</div>
+                              </div>
+                              <div className="prog-day-badge">
+                                {isRest ? 'Dinlenme' : `${day.exercises?.length || 0} Hareket`}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                            {!isRest && (day.focus?.length > 0 || day.exercises?.length > 0) && (
+                              <div className="prog-day-tags">
+                                {(day.focus || []).slice(0, 5).map((f) => (
+                                  <span key={f} className="prog-day-tag">{f}</span>
+                                ))}
+                              </div>
+                            )}
+                            {isRest && day.tips && (
+                              <div className="prog-day-tips">{day.tips}</div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -431,16 +493,18 @@ export default function ProgramManagerModal({
               {customDays.map((day, dIdx) => (
                 <div
                   key={day.id}
+                  className={day.isRest ? 'prog-day rest' : 'prog-day'}
                   style={{
-                    background: 'var(--surface)',
+                    background: 'linear-gradient(160deg, #14181F 0%, #0E1117 100%)',
                     border: '1px solid var(--border)',
-                    borderRadius: '10px',
+                    borderLeft: day.isRest ? '3px solid var(--border-subtle)' : '3px solid var(--primary)',
+                    borderRadius: '11px',
                     padding: '12px'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ color: '#38BDF8', fontWeight: 800, fontSize: '0.8rem' }}>#{dIdx + 1}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div className="prog-day-num">{dIdx + 1}</div>
                       <input
                         type="text"
                         value={day.dayName}
@@ -519,7 +583,7 @@ export default function ProgramManagerModal({
                           key={ex.id || eIdx}
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: '1.8fr 1fr 1fr 28px',
+                            gridTemplateColumns: 'minmax(0,1.8fr) minmax(0,0.9fr) minmax(0,0.9fr) 28px',
                             gap: '6px',
                             alignItems: 'center',
                             background: 'var(--bg-dark)',
@@ -567,7 +631,7 @@ export default function ProgramManagerModal({
                         style={{
                           alignSelf: 'flex-start',
                           background: 'transparent',
-                          color: '#38BDF8',
+                          color: '#3B82F6',
                           border: 'none',
                           fontSize: '0.72rem',
                           fontWeight: 700,
@@ -609,6 +673,7 @@ export default function ProgramManagerModal({
             </button>
           </form>
         )}
+        </div>
       </div>
     </div>
   );

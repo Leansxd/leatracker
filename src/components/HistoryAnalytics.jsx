@@ -6,20 +6,36 @@ export default function HistoryAnalytics({ logs, weightLogs, onDeleteLog, onExpo
   const totalWorkouts = logs.length;
   const totalVolumeAll = logs.reduce((acc, l) => acc + (l.totalVolumeKg || 0), 0);
 
+  const weekStart = (() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const mondayOffset = (now.getDay() + 6) % 7;
+    return today.getTime() - mondayOffset * 86400000;
+  })();
+  const weekEnd = weekStart + 6 * 86400000;
+  const thisWeekLogs = logs.filter((l) => {
+    if (!l.date) return false;
+    const d = new Date(`${String(l.date).slice(0, 10)}T00:00:00`).getTime();
+    return d >= weekStart && d <= weekEnd + 86399000;
+  });
+  const weekWorkouts = thisWeekLogs.length;
+  const weekVolume = thisWeekLogs.reduce((a, l) => a + (l.totalVolumeKg || 0), 0);
+  const fmtVolume = (v) => (v > 1000 ? `${(v / 1000).toFixed(1)} ton` : `${v} kg`);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* MODÜL 1: Vücut Ağırlığı (Tartı) Değişim Grafiği */}
       <div className="glass-panel" style={{ padding: '20px' }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F1F5F9', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Scale size={20} color="#00E5FF" /> Vücut Ağırlığı (Tartı) Değişim Grafiği
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F4F6F8', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Scale size={20} color="#3B82F6" /> Vücut Ağırlığı (Tartı) Değişim Grafiği
         </h2>
         <WeightChart weightLogs={weightLogs} />
       </div>
 
       {/* Stats Summary Panel */}
       <div className="glass-panel" style={{ padding: '20px' }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F1F5F9', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <TrendingUp size={20} color="#00E676" /> Genel Antrenman İstatistikleri
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F4F6F8', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <TrendingUp size={20} color="#10B981" /> Genel Antrenman İstatistikleri
         </h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
@@ -28,10 +44,18 @@ export default function HistoryAnalytics({ logs, weightLogs, onDeleteLog, onExpo
             <div className="stat-box-lbl">Tamamlanan Antrenman</div>
           </div>
           <div className="stat-box">
-            <div className="stat-box-val" style={{ color: '#00E676' }}>
-              {totalVolumeAll > 1000 ? `${(totalVolumeAll / 1000).toFixed(1)} ton` : `${totalVolumeAll} kg`}
+            <div className="stat-box-val" style={{ color: '#10B981' }}>
+              {fmtVolume(totalVolumeAll)}
             </div>
             <div className="stat-box-lbl">Toplam Kaldırılan Hacim</div>
+          </div>
+          <div className="stat-box">
+            <div className="stat-box-val" style={{ color: '#3B82F6' }}>{weekWorkouts}</div>
+            <div className="stat-box-lbl">Bu Hafta Antrenman</div>
+          </div>
+          <div className="stat-box">
+            <div className="stat-box-val">{fmtVolume(weekVolume)}</div>
+            <div className="stat-box-lbl">Bu Hafta Hacim</div>
           </div>
         </div>
 
@@ -61,12 +85,12 @@ export default function HistoryAnalytics({ logs, weightLogs, onDeleteLog, onExpo
 
       {/* History List */}
       <div className="glass-panel" style={{ padding: '20px' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#F1F5F9', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <History size={18} color="#B388FF" /> Geçmiş Antrenman Kayıtları
+        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#F4F6F8', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <History size={18} color="#6366F1" /> Geçmiş Antrenman Kayıtları
         </h3>
 
         {logs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '24px 0', color: '#64748B', fontSize: '0.85rem' }}>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: '#6E7683', fontSize: '0.85rem' }}>
             Henüz kaydedilmiş antrenman bulunmuyor.
           </div>
         ) : (
@@ -79,28 +103,28 @@ export default function HistoryAnalytics({ logs, weightLogs, onDeleteLog, onExpo
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <span style={{ fontSize: '0.72rem', color: '#00E5FF', fontWeight: 700 }}>
+                    <span style={{ fontSize: '0.72rem', color: '#3B82F6', fontWeight: 700 }}>
                       {log.dateStr} • {log.dayName}
                     </span>
-                    <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#F1F5F9', marginTop: '2px' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#F4F6F8', marginTop: '2px' }}>
                       {log.title}
                     </h4>
                   </div>
                   <button
                     onClick={() => onDeleteLog(log.id)}
-                    style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer' }}
+                    style={{ background: 'transparent', border: 'none', color: '#6E7683', cursor: 'pointer' }}
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', marginTop: '10px', fontSize: '0.78rem', color: '#94A3B8' }}>
-                  <div>🔥 Toplam Hacim: <strong style={{ color: '#00E676' }}>{log.totalVolumeKg} kg</strong></div>
-                  <div>✅ Set Sayısı: <strong style={{ color: '#F1F5F9' }}>{log.completedSetsCount}</strong></div>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '10px', fontSize: '0.78rem', color: '#A1A7B3' }}>
+                  <div>🔥 Toplam Hacim: <strong style={{ color: '#10B981' }}>{log.totalVolumeKg} kg</strong></div>
+                  <div>✅ Set Sayısı: <strong style={{ color: '#F4F6F8' }}>{log.completedSetsCount}</strong></div>
                 </div>
 
                 {log.notes && (
-                  <div style={{ marginTop: '8px', fontSize: '0.78rem', color: '#CBD5E1', background: 'rgba(0,0,0,0.2)', padding: '6px 10px', borderRadius: '6px' }}>
+                  <div style={{ marginTop: '8px', fontSize: '0.78rem', color: '#E2E8F0', background: 'rgba(0,0,0,0.2)', padding: '6px 10px', borderRadius: '6px' }}>
                     💬 {log.notes}
                   </div>
                 )}

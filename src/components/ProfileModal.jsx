@@ -88,7 +88,7 @@ export default function ProfileModal({
       <div className="glass-panel modal-content" style={{ maxWidth: '490px', maxHeight: '88vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <User size={20} color="#38BDF8" /> Çoklu Profil & Akıllı Hedefler
+            <User size={20} color="#3B82F6" /> Çoklu Profil & Akıllı Hedefler
           </h2>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-sub)', cursor: 'pointer' }}>
             <X size={20} />
@@ -104,8 +104,8 @@ export default function ProfileModal({
                 onClick={() => handleSelectProfileTab(p)}
                 style={{
                   background: isSelected ? 'var(--surface-alt)' : 'var(--surface)',
-                  border: isSelected ? '1px solid #38BDF8' : '1px solid var(--border)',
-                  color: isSelected ? '#38BDF8' : 'var(--text-sub)',
+                  border: isSelected ? '1px solid #3B82F6' : '1px solid var(--border)',
+                  color: isSelected ? '#3B82F6' : 'var(--text-sub)',
                   padding: '6px 12px',
                   borderRadius: '20px',
                   fontSize: '0.75rem',
@@ -176,7 +176,7 @@ export default function ProfileModal({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                <Scale size={13} color="#38BDF8" /> Kilo (kg)
+                <Scale size={13} color="#3B82F6" /> Kilo (kg)
               </label>
               <input
                 type="number"
@@ -192,7 +192,7 @@ export default function ProfileModal({
 
             <div>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                <Activity size={13} color="#38BDF8" /> Boy (cm)
+                <Activity size={13} color="#3B82F6" /> Boy (cm)
               </label>
               <input
                 type="number"
@@ -281,8 +281,8 @@ export default function ProfileModal({
             onClick={handleCalculateSmart}
             style={{
               background: 'var(--surface-alt)',
-              border: '1px solid #38BDF8',
-              color: '#38BDF8',
+              border: '1px solid #3B82F6',
+              color: '#3B82F6',
               padding: '8px',
               borderRadius: '8px',
               fontSize: '0.75rem',
@@ -298,8 +298,8 @@ export default function ProfileModal({
           </button>
 
           {recommendation && (
-            <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '8px', padding: '10px', fontSize: '0.75rem' }}>
-              <div style={{ color: '#38BDF8', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '8px', padding: '10px', fontSize: '0.75rem' }}>
+              <div style={{ color: '#3B82F6', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <CheckCircle2 size={14} /> Önerilen Hedefler & Program
               </div>
               <div style={{ color: 'var(--text-main)', lineHeight: 1.5 }}>
