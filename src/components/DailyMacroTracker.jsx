@@ -55,30 +55,6 @@ export default function DailyMacroTracker({ dailyLog, onUpdateDailyLog, profile 
 
   return (
     <div className="glass-panel" style={{ padding: '20px', marginBottom: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#F4F6F8', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Flame size={18} color="#F59E0B" /> Günlük Beslenme & Takviye Takibi
-        </h3>
-        <button
-          onClick={() => setIsAddFoodOpen(true)}
-          style={{
-            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.15))',
-            border: '1px solid rgba(59, 130, 246, 0.4)',
-            color: '#3B82F6',
-            padding: '6px 12px',
-            borderRadius: '10px',
-            cursor: 'pointer',
-            fontSize: '0.78rem',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          <Plus size={14} /> Besin / Öğün Ekle
-        </button>
-      </div>
-
       {/* Progress Bars */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
         {/* Kalori Progress Bar */}
@@ -170,6 +146,31 @@ export default function DailyMacroTracker({ dailyLog, onUpdateDailyLog, profile 
         >
           {tookPreworkout ? <CheckSquare size={16} style={{ marginBottom: '2px' }} /> : <Square size={16} style={{ marginBottom: '2px' }} />}
           Pre-Workout
+        </button>
+      </div>
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#F4F6F8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Flame size={18} color="#F59E0B" /> Günlük Beslenme & Takviye Takibi
+        </h3>
+        <button
+          onClick={() => setIsAddFoodOpen(true)}
+          style={{
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.15))',
+            border: '1px solid rgba(59, 130, 246, 0.4)',
+            color: '#3B82F6',
+            padding: '6px 12px',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <Plus size={14} /> Besin / Öğün Ekle
         </button>
       </div>
 

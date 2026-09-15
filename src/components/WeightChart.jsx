@@ -87,7 +87,7 @@ export default function WeightChart({ weightLogs }) {
             key={idx}
             style={{
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               padding: '8px 12px',
               background: 'rgba(15, 23, 42, 0.4)',
               borderRadius: '8px',
