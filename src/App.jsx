@@ -9,10 +9,11 @@ import DailyMacroTracker from './components/DailyMacroTracker';
 import WeightChart from './components/WeightChart';
 import AuthScreen from './components/AuthScreen';
 import DrawerMenu from './components/DrawerMenu';
+import AIAnalyticsView from './components/AIAnalyticsView';
 import Toaster, { toast } from './components/Toaster';
 import { useAuth } from './context/AuthContext';
 import { loadUserData, saveUserData } from './services/userData';
-import { Dumbbell, History, Scale, Utensils, ChevronLeft, ChevronRight, Calendar, Plus, Check, Layers, User, Menu, Flame, Droplets } from 'lucide-react';
+import { Dumbbell, History, Scale, Utensils, ChevronLeft, ChevronRight, Calendar, Plus, Check, Layers, User, Menu, Flame, Droplets, Sparkles } from 'lucide-react';
 
 const STORAGE_KEY_PROFILES = 'letracker_profiles_v3';
 const STORAGE_KEY_ACTIVE_PROFILE = 'letracker_active_profile_v3';
@@ -535,6 +536,7 @@ export default function App() {
         dateStr: formatDateDisplay(selectedDate),
         date: selectedDate,
         timestamp: Date.now(),
+        programId: activeProgram.id,
         programName: activeProgram.name,
         dayId: day.id,
         dayName: day.dayName,
@@ -602,6 +604,68 @@ export default function App() {
       activeProfileId,
       customPrograms,
       activeProgramId
+    ]
+  );
+
+  const handleDeleteLog = useCallback(
+    (id) => {
+      const logToDelete = logsHistoryRef.current.find((l) => l.id === id);
+      const nextLogs = logsHistoryRef.current.filter((l) => l.id !== id);
+      logsHistoryRef.current = nextLogs;
+      setLogsHistory(nextLogs);
+
+      let nextDailyMap = dailyDataMapRef.current;
+      if (logToDelete && logToDelete.date) {
+        const dayRecord = nextDailyMap[logToDelete.date];
+        if (dayRecord) {
+          const targetProgId = logToDelete.programId || activeProgram.id;
+          const currentCompletion = dayRecord.workoutCompleted;
+          let nextCompletion = {};
+
+          if (currentCompletion && typeof currentCompletion === 'object') {
+            nextCompletion = { ...currentCompletion };
+            delete nextCompletion[targetProgId];
+            if (logToDelete.programName) {
+              delete nextCompletion[logToDelete.programName];
+            }
+          }
+
+          nextDailyMap = {
+            ...nextDailyMap,
+            [logToDelete.date]: {
+              ...dayRecord,
+              workoutCompleted: nextCompletion
+            }
+          };
+          dailyDataMapRef.current = nextDailyMap;
+          setDailyDataMap(nextDailyMap);
+        }
+      }
+
+      const uid = userRef.current?.uid;
+      if (uid) {
+        saveUserData(uid, {
+          profiles,
+          activeProfileId,
+          customPrograms,
+          activeProgramId,
+          hiddenProgramIds,
+          dailyDataMap: nextDailyMap,
+          logsHistory: nextLogs
+        }).catch((err) => {
+          console.warn('Firestore veri kaydedilemedi:', err);
+        });
+      }
+
+      toast('🗑️ Antrenman kaydı silindi. Bu günü tekrar kaydedebilirsiniz.');
+    },
+    [
+      activeProgram.id,
+      profiles,
+      activeProfileId,
+      customPrograms,
+      activeProgramId,
+      hiddenProgramIds
     ]
   );
 
@@ -739,6 +803,15 @@ export default function App() {
             >
               <User size={13} color="var(--primary)" />
               <span className="header-chip-text">{activeProfile.name}</span>
+            </button>
+            <button
+              className={`header-chip ${activeTab === 'ai' ? 'active' : ''}`}
+              onClick={() => setActiveTab('ai')}
+              title="AI Koç & Analiz"
+              style={activeTab === 'ai' ? { borderColor: '#9333EA', background: 'rgba(147, 51, 234, 0.15)' } : {}}
+            >
+              <Sparkles size={13} color="#C084FC" />
+              <span className="header-chip-text" style={{ color: activeTab === 'ai' ? '#C084FC' : undefined }}>AI Koç</span>
             </button>
           </div>
         </div>
@@ -892,7 +965,7 @@ export default function App() {
         <HistoryAnalytics
           logs={logsHistory}
           weightLogs={weightLogsForChart}
-          onDeleteLog={(id) => setLogsHistory((prev) => prev.filter((l) => l.id !== id))}
+          onDeleteLog={handleDeleteLog}
           onExportData={() => {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ profiles, activeProfileId, customPrograms, activeProgramId, hiddenProgramIds, dailyDataMap, logsHistory }, null, 2));
             const anchor = document.createElement('a');
@@ -923,6 +996,17 @@ export default function App() {
               };
             }
           }}
+        />
+      )}
+
+      {activeTab === 'ai' && (
+        <AIAnalyticsView
+          profile={activeProfile}
+          logsHistory={logsHistory}
+          dailyDataMap={dailyDataMap}
+          selectedDate={selectedDate}
+          currentDayData={currentDayData}
+          activeProgram={activeProgram}
         />
       )}
 
@@ -991,6 +1075,12 @@ export default function App() {
           onClick={() => setActiveTab('history')}
         >
           <History size={18} /> Geçmiş
+        </button>
+        <button
+          className={`bottom-nav-item ${activeTab === 'ai' ? 'active' : ''}`}
+          onClick={() => setActiveTab('ai')}
+        >
+          <Sparkles size={18} color={activeTab === 'ai' ? '#C084FC' : undefined} /> AI Koç
         </button>
       </nav>
       <Toaster />
