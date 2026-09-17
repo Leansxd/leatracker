@@ -2,6 +2,79 @@ import { WORKOUT_DAYS as CHEST_BACK_ARMS_DAYS } from './workoutProgram';
 
 export const PRESET_PROGRAMS = [
   {
+    id: 'preset_enes_program',
+    name: 'EnesProgram - Göğüs, Sırt ve Kol Odaklı (4 Gün)',
+    category: 'Özel Hipertrofi',
+    daysPerWeek: 4,
+    description: 'Göğüs, Sırt, Biceps, Triceps ve Omuz odaklı özel 4 günlük hipertrofi protokolü.',
+    days: [
+      {
+        id: 'enes_d1',
+        dayName: '1. GÜN (PAZARTESİ)',
+        title: 'Göğüs + Triceps (Ön Göğüs & İtiş Focus)',
+        isRest: false,
+        focus: ['Göğüs', 'Triceps'],
+        exercises: [
+          { id: 'enes_d1_e1', name: 'Incline Dumbbell Press', tag: 'Üst Göğüs', defaultSets: 3, targetReps: '8-10', suggestedWeight: '12 kg', tips: 'Üst göğüs hipertrofisi' },
+          { id: 'enes_d1_e2', name: 'Chest Press Machine', tag: 'Göğüs', defaultSets: 3, targetReps: '10-12', suggestedWeight: 'Orta Ağırlık', tips: 'Sabit hat üzerinde maksimum göğüs aktivasyonu' },
+          { id: 'enes_d1_e3', name: 'Cable Fly / Pec Deck Machine', tag: 'Göğüs', defaultSets: 3, targetReps: '12-15', suggestedWeight: 'Hafif-Orta', tips: 'Göğüste izole esneme ve sıkışma' },
+          { id: 'enes_d1_e4', name: 'Rope Triceps Pushdown (Cable)', tag: 'Triceps', defaultSets: 4, targetReps: '10-12', suggestedWeight: 'Orta Ağırlık', tips: 'Dirsekleri sabitleyip aşağı itin' },
+          { id: 'enes_d1_e5', name: 'Dumbbell Overhead Triceps Extension', tag: 'Triceps', defaultSets: 3, targetReps: '10-12', suggestedWeight: '8-10 kg', tips: 'Triceps uzun başı için' }
+        ]
+      },
+      {
+        id: 'enes_d2',
+        dayName: '2. GÜN (SALI)',
+        title: 'Sırt + Biceps (Sırt Genişliği & Çekiş Focus)',
+        isRest: false,
+        focus: ['Sırt', 'Biceps', 'Arka Omuz'],
+        exercises: [
+          { id: 'enes_d2_e1', name: 'Lat Pulldown (Machine/Cable)', tag: 'Sırt', defaultSets: 4, targetReps: '8-10', suggestedWeight: 'Orta Ağırlık', tips: 'Kanat genişliği' },
+          { id: 'enes_d2_e2', name: 'Seated Cable Row', tag: 'Sırt', defaultSets: 3, targetReps: '10-12', suggestedWeight: 'Orta Ağırlık', tips: 'Sırt kalınlığı ve kürek kemiği aktivasyonu' },
+          { id: 'enes_d2_e3', name: 'Dumbbell Single-Arm Row', tag: 'Sırt', defaultSets: 3, targetReps: '8-10', suggestedWeight: '12-14 kg', tips: 'Tek taraflı güç ve esneme' },
+          { id: 'enes_d2_e4', name: 'Machine Rear Delt Fly (Reverse Pec Deck)', tag: 'Arka Omuz', defaultSets: 3, targetReps: '12-15', suggestedWeight: 'Hafif-Orta', tips: 'Arka omuz ve üst sırt detayı' },
+          { id: 'enes_d2_e5', name: 'Incline Dumbbell Curl', tag: 'Biceps', defaultSets: 3, targetReps: '10-12', suggestedWeight: '8 kg', tips: 'Biceps uzun başı' },
+          { id: 'enes_d2_e6', name: 'Cable Hammer Curl (Rope ile)', tag: 'Ön Kol / Biceps', defaultSets: 3, targetReps: '10-12', suggestedWeight: 'Orta Ağırlık', tips: 'Brachialis ve ön kol' }
+        ]
+      },
+      {
+        id: 'enes_d3',
+        dayName: '3. GÜN (ÇARŞAMBA)',
+        title: 'Dinlenme / Aktif Dinlenme',
+        isRest: true,
+        tips: 'Kas onarımı, toparlanma ve su tüketimine özen gösterin.'
+      },
+      {
+        id: 'enes_d4',
+        dayName: '4. GÜN (PERŞEMBE)',
+        title: 'Üst Göğüs + Sırt (Hacim & Orantı Focus)',
+        isRest: false,
+        focus: ['Göğüs', 'Sırt'],
+        exercises: [
+          { id: 'enes_d4_e1', name: 'Incline Chest Press Machine', tag: 'Üst Göğüs', defaultSets: 3, targetReps: '8-10', suggestedWeight: 'Orta Ağırlık', tips: 'Üst göğüs hacim çalışması' },
+          { id: 'enes_d4_e2', name: 'Flat Dumbbell Press', tag: 'Göğüs', defaultSets: 3, targetReps: '8-10', suggestedWeight: '12-16 kg', tips: 'Göğüs genel kütle' },
+          { id: 'enes_d4_e3', name: 'Lat Pulldown (V-Grip veya Close-Grip)', tag: 'Sırt', defaultSets: 3, targetReps: '10-12', suggestedWeight: 'Orta Ağırlık', tips: 'Alt kanat ve sırt odağı' },
+          { id: 'enes_d4_e4', name: 'Machine Chest-Supported Row (veya T-Bar Row Machine)', tag: 'Sırt', defaultSets: 3, targetReps: '10-12', suggestedWeight: 'Orta Ağırlık', tips: 'Bel baskısı olmadan sırt kalınlaştırma' },
+          { id: 'enes_d4_e5', name: 'Dumbbell Pullover', tag: 'Göğüs / Sırt', defaultSets: 3, targetReps: '12', suggestedWeight: '10-12 kg', tips: 'Göğüs kafesi genişletme ve lat esnetme' }
+        ]
+      },
+      {
+        id: 'enes_d5',
+        dayName: '5. GÜN (CUMA)',
+        title: 'Kol Odaklı Gün (Biceps + Triceps + Omuz)',
+        isRest: false,
+        focus: ['Biceps', 'Triceps', 'Omuz'],
+        exercises: [
+          { id: 'enes_d5_e1', name: 'EZ-Bar veya Dumbbell Biceps Curl', tag: 'Biceps', defaultSets: 4, targetReps: '8-10', suggestedWeight: '10 kg', tips: 'Biceps ana kütle hareketi' },
+          { id: 'enes_d5_e2', name: 'Skullcrusher (EZ-Bar / Dumbbell ile)', tag: 'Triceps', defaultSets: 4, targetReps: '8-10', suggestedWeight: '10 kg', tips: 'Alına pres / Triceps izole' },
+          { id: 'enes_d5_e3', name: 'Machine Preacher Curl', tag: 'Biceps', defaultSets: 3, targetReps: '10-12', suggestedWeight: 'Orta Ağırlık', tips: 'Tepe noktası izolasyonu' },
+          { id: 'enes_d5_e4', name: 'Dip Machine veya Cable Dips', tag: 'Triceps', defaultSets: 3, targetReps: '10-12', suggestedWeight: 'Vücut / Ağırlık', tips: 'Triceps ve alt göğüs sıkışması' },
+          { id: 'enes_d5_e5', name: 'Dumbbell Lateral Raise', tag: 'Yan Omuz', defaultSets: 4, targetReps: '12-15', suggestedWeight: '4-6 kg', tips: 'Yan omuz genişliği' }
+        ]
+      }
+    ]
+  },
+  {
     id: 'preset_chest_back_arms',
     name: 'Göğüs, Sırt ve Kol Odaklı (4 Gün)',
     category: 'Hipertrofi / Estetik',

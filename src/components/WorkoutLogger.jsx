@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Plus, Trash2, Info, Timer, Sparkles, CheckCircle2, Flame, ChevronDown, ChevronUp, CheckSquare, Square } from 'lucide-react';
+import { Check, Plus, Trash2, Info, Timer, Sparkles, CheckCircle2, Flame, ChevronDown, ChevronUp, CheckSquare, Square, Camera } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WARMUP_ROUTINES } from '../data/nutritionPresets';
 import { toast } from './Toaster';
@@ -14,7 +14,9 @@ export default function WorkoutLogger({
   extraExercises = [],
   workoutCompleted = false,
   onAddExtraExercise,
-  onRemoveExtraExercise
+  onRemoveExtraExercise,
+  exerciseImages = {},
+  onUpdateExerciseImage
 }) {
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [showTipsMap, setShowTipsMap] = useState({});
@@ -22,6 +24,30 @@ export default function WorkoutLogger({
   const [warmupChecked, setWarmupChecked] = useState({});
   const [isAddingExercise, setIsAddingExercise] = useState(false);
   const [newExercise, setNewExercise] = useState({ name: '', defaultSets: 3, targetReps: '8-10', suggestedWeight: '10 kg' });
+
+  const handleImageChange = (exId, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      toast('Lütfen 4MB\'tan küçük bir görsel seçin.', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (onUpdateExerciseImage) {
+        onUpdateExerciseImage(exId, evt.target.result);
+        toast('📷 Fotoğraf kaydedildi!');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = (exId) => {
+    if (onUpdateExerciseImage) {
+      onUpdateExerciseImage(exId, null);
+      toast('🗑️ Fotoğraf kaldırıldı.');
+    }
+  };
 
   const allExercises = [...(selectedDay.exercises || []), ...extraExercises];
   const isExtraExercise = (ex) => extraExercises.some((e) => e.id === ex.id);
@@ -236,36 +262,106 @@ export default function WorkoutLogger({
                 </div>
               </div>
 
-              <button
-                onClick={() => toggleTip(ex.id)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: isTipOpen ? '#FAFAFA' : '#71717A',
-                  cursor: 'pointer',
-                  padding: '2px'
-                }}
-              >
-                <Info size={16} />
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label
+                  htmlFor={`ex_img_input_${ex.id}`}
+                  style={{
+                    background: exerciseImages[ex.id] ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                    border: exerciseImages[ex.id] ? '1px solid rgba(16, 185, 129, 0.4)' : 'none',
+                    borderRadius: '6px',
+                    color: exerciseImages[ex.id] ? '#10B981' : '#71717A',
+                    cursor: 'pointer',
+                    padding: '3px 6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.7rem',
+                    fontWeight: 700
+                  }}
+                  title="Fotoğraf Ekle / Değiştir"
+                >
+                  <Camera size={15} />
+                  <span>{exerciseImages[ex.id] ? 'Fotoğraf' : 'Foto Ekle'}</span>
+                  <input
+                    id={`ex_img_input_${ex.id}`}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => handleImageChange(ex.id, e)}
+                  />
+                </label>
 
-              {isExtraExercise(ex) && (
                 <button
-                  onClick={() => onRemoveExtraExercise(ex.id)}
+                  type="button"
+                  onClick={() => toggleTip(ex.id)}
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: '#EF4444',
+                    color: isTipOpen ? '#FAFAFA' : '#71717A',
                     cursor: 'pointer',
-                    padding: '2px',
-                    marginLeft: '2px'
+                    padding: '2px'
                   }}
-                  title="Hareketi kaldır"
+                  title="Tavsiye / İpucu"
                 >
-                  <Trash2 size={15} />
+                  <Info size={16} />
                 </button>
-              )}
+
+                {isExtraExercise(ex) && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveExtraExercise(ex.id)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#EF4444',
+                      cursor: 'pointer',
+                      padding: '2px'
+                    }}
+                    title="Hareketi kaldır"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                )}
+              </div>
             </div>
+
+            {exerciseImages[ex.id] && (
+              <div style={{ position: 'relative', marginTop: '6px', marginBottom: '10px' }}>
+                <img
+                  src={exerciseImages[ex.id]}
+                  alt={ex.name}
+                  style={{
+                    width: '100%',
+                    maxHeight: '220px',
+                    objectFit: 'cover',
+                    borderRadius: '10px',
+                    border: '1px solid var(--border)'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(ex.id)}
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    background: 'rgba(15, 23, 42, 0.85)',
+                    border: '1px solid rgba(239, 68, 68, 0.5)',
+                    borderRadius: '50%',
+                    width: '28px',
+                    height: '28px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#EF4444',
+                    cursor: 'pointer'
+                  }}
+                  title="Fotoğrafı Kaldır"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            )}
 
             {isTipOpen && (
               <div style={{ background: 'var(--bg-black)', borderLeft: '2px solid #FAFAFA', padding: '8px 10px', borderRadius: '4px', fontSize: '0.75rem', color: '#A1A1AA', marginBottom: '8px' }}>

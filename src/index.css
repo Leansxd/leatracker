@@ -1,24 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  --bg-app: #0B0D12;
-  --surface: #12151B;
-  --surface-alt: #1A1E26;
-  --border: #262B35;
-  --border-subtle: #323945;
+  --bg-app: #0A0D14;
+  --surface: #131822;
+  --surface-alt: #1C2333;
+  --border: #262F42;
+  --border-subtle: #333F58;
 
   --primary: #3B82F6;
   --primary-strong: #2563EB;
-  --primary-subtle: rgba(59, 130, 246, 0.12);
+  --primary-subtle: rgba(59, 130, 246, 0.18);
   --success: #10B981;
-  --success-subtle: rgba(16, 185, 129, 0.12);
+  --success-subtle: rgba(16, 185, 129, 0.18);
   --warning: #F59E0B;
   --danger: #EF4444;
   --indigo: #6366F1;
+  --purple: #9333EA;
 
-  --text-main: #F4F6F8;
-  --text-sub: #A1A7B3;
-  --text-muted: #6E7683;
+  --text-main: #F8FAFC;
+  --text-sub: #CBD5E1;
+  --text-muted: #8492A6;
 
   --border-color: var(--border);
   --bg-black: var(--bg-app);
@@ -29,8 +30,8 @@
   --radius-lg: 16px;
   --radius-pill: 999px;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 16px rgba(0, 0, 0, 0.14);
-  --shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.6);
 
   --touch-speed: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -47,7 +48,7 @@ body {
   background-color: var(--bg-app);
   color: var(--text-main);
   min-height: 100vh;
-  padding-bottom: 84px;
+  padding-bottom: 24px;
   overscroll-behavior-y: none;
   font-weight: 500;
   -webkit-font-smoothing: antialiased;
@@ -60,7 +61,6 @@ body {
   padding: 12px;
 }
 
-/* ===== Header ===== */
 .app-header {
   position: sticky;
   top: 0;
@@ -68,28 +68,20 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 8px 0 20px;
+  padding: 8px 0 12px;
   margin-bottom: 4px;
-  background: #0B0D12;
-}
-
-.app-header::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -56px;
-  height: 56px;
-  background: linear-gradient(to bottom, #0B0D12 0%, rgba(11, 13, 18, 0) 100%);
-  pointer-events: none;
+  background: rgba(10, 13, 20, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
 }
 
 .app-title {
   text-align: center;
-  font-size: 1.32rem;
+  font-size: 1.4rem;
   font-weight: 900;
-  letter-spacing: 0.3px;
-  color: var(--text-main);
+  letter-spacing: -0.3px;
+  color: #3B82F6;
   user-select: none;
 }
 
@@ -98,12 +90,12 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  padding-top: 8px;
+  min-width: 0;
 }
 
 .hamburger-btn {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-subtle);
   color: var(--text-main);
   width: 38px;
   height: 38px;
@@ -113,7 +105,7 @@ body {
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform var(--touch-speed), background var(--touch-speed);
+  transition: all var(--touch-speed);
 }
 
 .hamburger-btn:active {
@@ -124,28 +116,26 @@ body {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  position: relative;
-  z-index: 1;
+  max-width: 100%;
 }
 
 .header-chip {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-subtle);
   color: var(--text-sub);
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: var(--radius-pill);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
-  max-width: none;
+  max-width: 280px;
   min-width: 0;
-  white-space: nowrap;
-  transition: transform var(--touch-speed), background var(--touch-speed), color var(--touch-speed);
+  transition: all var(--touch-speed);
 }
 
 .header-chip:active {
@@ -160,22 +150,23 @@ body {
   white-space: nowrap;
 }
 
-/* ===== Date bar ===== */
 .date-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 6px 8px;
-  margin-top: 26px;
+  padding: 8px 12px;
+  margin-top: 14px;
   margin-bottom: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-card);
 }
 
 .date-btn {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
   color: var(--text-sub);
   cursor: pointer;
   display: flex;
@@ -192,12 +183,12 @@ body {
 }
 
 .date-display {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--text-main);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -207,53 +198,64 @@ body {
   text-overflow: ellipsis;
 }
 
-/* ===== Daily summary ===== */
 .daily-summary {
-  margin-bottom: 12px;
-  padding: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-card);
 }
 
 .daily-summary-title {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 800;
   color: var(--text-sub);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .daily-summary-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
 
 .summary-stat {
-  background: var(--bg-app);
+  background: rgba(10, 14, 22, 0.6);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px;
+  border-radius: var(--radius-md);
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
+  transition: border-color 0.2s ease;
+}
+
+.summary-stat:hover {
+  border-color: var(--border-subtle);
 }
 
 .summary-stat-label {
-  font-size: 0.62rem;
-  color: var(--text-muted);
+  font-size: 0.66rem;
+  color: var(--text-sub);
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .summary-stat-value {
-  font-size: 0.92rem;
+  font-size: 0.98rem;
   font-weight: 800;
   color: var(--text-main);
   white-space: nowrap;
@@ -262,13 +264,13 @@ body {
 .summary-stat-value em {
   font-style: normal;
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 600;
 }
 
 .progress-track {
-  height: 4px;
-  background: var(--surface-alt);
+  height: 5px;
+  background: rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-pill);
   overflow: hidden;
   margin-top: 2px;
@@ -277,23 +279,26 @@ body {
 .progress-fill {
   height: 100%;
   border-radius: var(--radius-pill);
-  transition: width 0.3s ease;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .progress-kcal {
-  background: linear-gradient(90deg, var(--warning), #FBBF24);
+  background: linear-gradient(90deg, #F59E0B, #EF4444);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
 }
 
 .progress-protein {
-  background: linear-gradient(90deg, var(--success), #34D399);
+  background: linear-gradient(90deg, #10B981, #3B82F6);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
 }
 
 .progress-water {
-  background: linear-gradient(90deg, var(--primary), #60A5FA);
+  background: linear-gradient(90deg, #3B82F6, #6366F1);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
 }
 
 .summary-stat-foot {
-  font-size: 0.62rem;
+  font-size: 0.65rem;
   color: var(--text-muted);
   font-weight: 700;
   white-space: nowrap;
@@ -352,60 +357,63 @@ body {
 /* ===== Cards ===== */
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 14px;
-  margin-bottom: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 14px;
+  backdrop-filter: blur(12px);
   box-shadow: var(--shadow-card);
 }
 
 .card-title {
-  font-size: 0.92rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 800;
   color: var(--text-main);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .glass-panel {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(12px);
   box-shadow: var(--shadow-card);
 }
 
 .glass-panel-interactive {
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .glass-panel-interactive:active {
-  border-color: var(--border-subtle);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
-/* ===== Day selector ===== */
 .day-selector-scroll {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
   padding-bottom: 8px;
   scrollbar-width: none;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .schedule-note {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  margin-bottom: 10px;
+  gap: 8px;
+  background: rgba(18, 22, 31, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  margin-bottom: 12px;
   color: var(--text-sub);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
+  backdrop-filter: blur(8px);
 }
 
 .day-selector-scroll::-webkit-scrollbar {
@@ -414,26 +422,28 @@ body {
 
 .day-pill {
   flex: 0 0 auto;
-  padding: 8px 14px;
+  padding: 9px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-sub);
+  backdrop-filter: blur(8px);
   transition: all var(--touch-speed);
 }
 
 .day-pill:active {
-  transform: scale(0.95);
+  transform: scale(0.94);
 }
 
 .day-pill.active {
-  background: var(--primary-subtle);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.15));
   border-color: var(--primary);
-  color: var(--primary);
+  color: #60A5FA;
   font-weight: 800;
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.25);
 }
 
 /* ===== Workout sets ===== */

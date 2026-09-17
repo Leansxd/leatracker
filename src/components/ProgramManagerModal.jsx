@@ -18,6 +18,8 @@ export default function ProgramManagerModal({
   const [activeTab, setActiveTab] = useState('presets');
   const [expandedProgramId, setExpandedProgramId] = useState(null);
   const [editingProgramId, setEditingProgramId] = useState(null);
+  const [editingDayIdx, setEditingDayIdx] = useState(null);
+  const [dayDeleteConfirm, setDayDeleteConfirm] = useState(false);
 
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -188,8 +190,7 @@ export default function ProgramManagerModal({
     setCustomDays((prev) => {
       const copy = [...prev];
       const targetDay = { ...copy[dayIndex] };
-      if ((targetDay.exercises || []).length <= 1) return prev;
-      targetDay.exercises = targetDay.exercises.filter((_, idx) => idx !== exIndex);
+      targetDay.exercises = (targetDay.exercises || []).filter((_, idx) => idx !== exIndex);
       copy[dayIndex] = targetDay;
       return copy;
     });

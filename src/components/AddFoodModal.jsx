@@ -126,8 +126,7 @@ export default function AddFoodModal({ onAddFood, onClose }) {
               placeholder="Örn: Tavuk Göğsü 150g"
               value={foodName}
               onChange={(e) => setFoodName(e.target.value)}
-              className="input-group-compact"
-              style={{ width: '100%', padding: '10px', color: '#F4F6F8' }}
+              style={{ width: '100%', padding: '10px 12px', background: 'var(--surface-alt)', border: '1px solid var(--border)', borderRadius: '8px', color: '#F4F6F8', outline: 'none' }}
               required
             />
           </div>
@@ -142,8 +141,7 @@ export default function AddFoodModal({ onAddFood, onClose }) {
                 placeholder="0"
                 value={calories}
                 onChange={(e) => setCalories(e.target.value)}
-                className="input-group-compact"
-                style={{ width: '100%', padding: '10px', color: '#F59E0B' }}
+                style={{ width: '100%', padding: '10px 12px', background: 'var(--surface-alt)', border: '1px solid var(--border)', borderRadius: '8px', color: '#F59E0B', fontWeight: 700, outline: 'none' }}
                 required
               />
             </div>
@@ -157,8 +155,7 @@ export default function AddFoodModal({ onAddFood, onClose }) {
                 placeholder="0"
                 value={protein}
                 onChange={(e) => setProtein(e.target.value)}
-                className="input-group-compact"
-                style={{ width: '100%', padding: '10px', color: '#10B981' }}
+                style={{ width: '100%', padding: '10px 12px', background: 'var(--surface-alt)', border: '1px solid var(--border)', borderRadius: '8px', color: '#10B981', fontWeight: 700, outline: 'none' }}
                 required
               />
             </div>

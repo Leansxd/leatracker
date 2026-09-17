@@ -1,6 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Trash2, Key, Sparkles, Bot } from 'lucide-react';
+import { Send, Sparkles, Bot, Plus } from 'lucide-react';
 import { askAiCoach } from '../services/aiService';
+
+const parseInlineMarkdown = (text) => {
+  if (!text) return text;
+  const parts = text.split(/(\*\*.*?\*\*|\*\*.*$)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith('**')) {
+      const clean = part.replace(/^\*\*/, '').replace(/\*\*$/, '');
+      return (
+        <strong key={idx} style={{ color: '#FAFAFA', fontWeight: 700 }}>
+          {clean}
+        </strong>
+      );
+    }
+    return part;
+  });
+};
 
 const renderFormattedMarkdown = (text) => {
   if (!text) return null;
@@ -34,17 +50,7 @@ const renderFormattedMarkdown = (text) => {
       cleanLine = cleanLine.replace(/^[*•-]\s+/, '');
     }
 
-    const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
-    const renderedParts = parts.map((part, pIdx) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return (
-          <strong key={pIdx} style={{ color: '#F4F6F8', fontWeight: 700 }}>
-            {part.slice(2, -2)}
-          </strong>
-        );
-      }
-      return part;
-    });
+    const renderedParts = parseInlineMarkdown(cleanLine);
 
     if (isHeader) {
       return (
@@ -108,10 +114,6 @@ export default function AIAnalyticsView({
   const [inputQuestion, setInputQuestion] = useState('');
   const [loadingChat, setLoadingChat] = useState(false);
 
-  const [showKeyConfig, setShowKeyConfig] = useState(false);
-  const [customKey, setCustomKey] = useState(() => localStorage.getItem('letracker_groq_api_key') || '');
-  const [keySaved, setKeySaved] = useState(false);
-
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -154,157 +156,57 @@ export default function AIAnalyticsView({
     localStorage.removeItem('letracker_ai_chat_history');
   };
 
-  const handleSaveKey = (e) => {
-    e.preventDefault();
-    if (customKey.trim()) {
-      localStorage.setItem('letracker_groq_api_key', customKey.trim());
-    } else {
-      localStorage.removeItem('letracker_groq_api_key');
-    }
-    setKeySaved(true);
-    setTimeout(() => setKeySaved(false), 2000);
-  };
-
-  const quickQuestions = [
-    "Bugünkü durumumu ve eksiklerimi analiz et",
-    "Son yaptığım hareketler ve ağırlıklarım nasıl?",
-    "Hangi kas gruplarım eksik kaldı, ne çalışmalıyım?",
-    "Bugünkü kalori ve protein açığım ne kadar?",
-    "Kaldırdığım ağırlıkları artırmak için bu hafta ne yapmalıyım?"
-  ];
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <div className="glass-panel" style={{ padding: '18px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div className="glass-panel" style={{ padding: '16px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
             <div style={{
-              width: '38px',
-              height: '38px',
+              width: '40px',
+              height: '40px',
               borderRadius: '10px',
               background: 'linear-gradient(135deg, #9333EA, #3B82F6)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(147, 51, 234, 0.3)'
+              boxShadow: '0 4px 12px rgba(147, 51, 234, 0.3)',
+              flexShrink: 0
             }}>
               <Bot size={22} color="#FFFFFF" />
             </div>
-            <div>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F4F6F8', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#F4F6F8', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 AI Fitness & Beslenme Koçu
               </h2>
-              <span style={{ fontSize: '0.75rem', color: '#A1A1AA' }}>
-                İdman hareketlerini, eksik kas gruplarını ve günlük beslenmeni analiz eder
+              <span style={{ fontSize: '0.72rem', color: '#A1A1AA', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                İdman ve beslenmeni anında analiz eder
               </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <button
-              onClick={() => setShowKeyConfig(!showKeyConfig)}
+              onClick={handleClearChat}
               style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid var(--border)',
+                background: 'linear-gradient(135deg, #9333EA, #3B82F6)',
+                border: 'none',
                 borderRadius: '8px',
-                padding: '6px 8px',
-                color: '#A1A1AA',
-                fontSize: '0.72rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-              title="API Ayarı"
-            >
-              <Key size={13} /> {showKeyConfig ? 'Kapat' : 'API'}
-            </button>
-
-            {chatMessages.length > 0 && (
-              <button
-                onClick={handleClearChat}
-                style={{
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  borderRadius: '8px',
-                  padding: '6px 8px',
-                  color: '#F87171',
-                  fontSize: '0.72rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-                title="Sohbeti Temizle"
-              >
-                <Trash2 size={13} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {showKeyConfig && (
-          <form onSubmit={handleSaveKey} style={{ marginBottom: '14px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '0.75rem', color: '#D4D4D8', marginBottom: '6px' }}>
-              Groq API Anahtarı (.env dışında manuel girmek istersen):
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input
-                type="password"
-                placeholder="gsk_..."
-                value={customKey}
-                onChange={(e) => setCustomKey(e.target.value)}
-                style={{
-                  flex: 1,
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  padding: '6px 10px',
-                  color: '#FAFAFA',
-                  fontSize: '0.75rem'
-                }}
-              />
-              <button
-                type="submit"
-                style={{
-                  background: keySaved ? '#10B981' : '#3B82F6',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '6px 12px',
-                  color: '#FFFFFF',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                {keySaved ? 'Kaydedildi' : 'Kaydet'}
-              </button>
-            </div>
-          </form>
-        )}
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '14px' }}>
-          {quickQuestions.map((q, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSendMessage(q)}
-              disabled={loadingChat}
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid var(--border)',
-                borderRadius: '16px',
-                padding: '6px 12px',
-                color: '#E4E4E7',
+                padding: '7px 12px',
+                color: '#FFFFFF',
                 fontSize: '0.75rem',
-                cursor: loadingChat ? 'not-allowed' : 'pointer',
-                textAlign: 'left',
-                opacity: loadingChat ? 0.6 : 1,
-                transition: 'all 0.15s ease'
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 8px rgba(147, 51, 234, 0.3)'
               }}
+              title="Sohbeti Sıfırla"
             >
-              {q}
+              <Plus size={14} /> Yeni Sohbet
             </button>
-          ))}
+          </div>
         </div>
 
         <div style={{
@@ -315,7 +217,7 @@ export default function AIAnalyticsView({
           flexDirection: 'column',
           gap: '12px',
           padding: '12px',
-          background: 'rgba(0,0,0,0.2)',
+          background: 'rgba(15, 23, 42, 0.4)',
           borderRadius: '10px',
           border: '1px solid var(--border)',
           marginBottom: '12px'
@@ -334,10 +236,10 @@ export default function AIAnalyticsView({
                 key={i}
                 style={{
                   alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                  maxWidth: '88%',
+                  maxWidth: '90%',
                   background: m.role === 'user'
-                    ? 'linear-gradient(135deg, #2563EB, #1D4ED8)'
-                    : 'rgba(255, 255, 255, 0.05)',
+                    ? 'linear-gradient(135deg, #3B82F6, #2563EB)'
+                    : 'rgba(24, 24, 27, 0.8)',
                   border: m.role === 'user' ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
                   borderRadius: m.role === 'user' ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
                   padding: '10px 14px',
@@ -348,7 +250,7 @@ export default function AIAnalyticsView({
                 }}
               >
                 {m.role === 'assistant' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px', fontSize: '0.72rem', fontWeight: 800, color: '#60A5FA' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px', fontSize: '0.72rem', fontWeight: 800, color: '#C084FC' }}>
                     <Bot size={13} /> AI Koç
                   </div>
                 )}
@@ -359,7 +261,7 @@ export default function AIAnalyticsView({
           {loadingChat && (
             <div style={{
               alignSelf: 'flex-start',
-              background: 'rgba(255, 255, 255, 0.04)',
+              background: 'rgba(24, 24, 27, 0.8)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: '14px 14px 14px 2px',
               padding: '10px 14px',

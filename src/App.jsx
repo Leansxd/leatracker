@@ -22,6 +22,7 @@ const STORAGE_KEY_ACTIVE_PROGRAM = 'letracker_active_program_v3';
 const STORAGE_KEY_DAILY_DATA = 'letracker_daily_data_v2';
 const STORAGE_KEY_LOGS = 'letracker_logs_v2';
 const STORAGE_KEY_HIDDEN_PROGRAMS = 'letracker_hidden_programs_v1';
+const STORAGE_KEY_EXERCISE_IMAGES = 'letracker_exercise_images_v1';
 
 const DEFAULT_PROFILES = [
   {
@@ -171,6 +172,11 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [exerciseImages, setExerciseImages] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_EXERCISE_IMAGES);
+    return saved ? JSON.parse(saved) : {};
+  });
+
   const [activeTab, setActiveTab] = useState('workout');
   const [selectedDayId, setSelectedDayId] = useState(() => {
     return activeDays[0]?.id || 'day1';
@@ -179,12 +185,12 @@ export default function App() {
 
   const weekdayMap = useMemo(() => {
     const map = {};
-    let idx = 0;
     (activeDays || []).forEach((day) => {
       const m = (day.dayName || '').match(/\(([^)]+)\)/);
-      const key = m ? m[1].trim().toUpperCase() : WEEKDAYS_TR[idx % 7];
-      if (!map[key]) map[key] = day.id;
-      idx++;
+      if (m) {
+        const key = m[1].trim().toUpperCase();
+        if (!map[key]) map[key] = day.id;
+      }
     });
     return map;
   }, [activeDays]);
@@ -229,6 +235,10 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY_HIDDEN_PROGRAMS, JSON.stringify(hiddenProgramIds));
   }, [hiddenProgramIds]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_EXERCISE_IMAGES, JSON.stringify(exerciseImages));
+  }, [exerciseImages]);
+
   const hydratedRef = useRef(false);
   const saveTimeoutRef = useRef(null);
   const userRef = useRef(null);
@@ -250,8 +260,38 @@ export default function App() {
     activeProgramId,
     hiddenProgramIds,
     dailyDataMap,
-    logsHistory
+    logsHistory,
+    exerciseImages
   });
+
+  const handleUpdateExerciseImage = useCallback((exId, imageData) => {
+    setExerciseImages((prev) => {
+      const next = { ...prev };
+      if (imageData) {
+        next[exId] = imageData;
+      } else {
+        delete next[exId];
+      }
+
+      const uid = userRef.current?.uid;
+      if (uid && hydratedRef.current) {
+        saveUserData(uid, {
+          profiles,
+          activeProfileId,
+          customPrograms,
+          activeProgramId,
+          hiddenProgramIds,
+          dailyDataMap,
+          logsHistory,
+          exerciseImages: next
+        }).catch((err) => {
+          console.warn('Firestore veri kaydedilemedi:', err);
+        });
+      }
+
+      return next;
+    });
+  }, [profiles, activeProfileId, customPrograms, activeProgramId, hiddenProgramIds, dailyDataMap, logsHistory]);
 
   useEffect(() => {
     userRef.current = user;
@@ -267,6 +307,22 @@ export default function App() {
 
   const handleLogout = async () => {
     flushPendingSave();
+    localStorage.removeItem(STORAGE_KEY_PROFILES);
+    localStorage.removeItem(STORAGE_KEY_ACTIVE_PROFILE);
+    localStorage.removeItem(STORAGE_KEY_CUSTOM_PROGRAMS);
+    localStorage.removeItem(STORAGE_KEY_ACTIVE_PROGRAM);
+    localStorage.removeItem(STORAGE_KEY_DAILY_DATA);
+    localStorage.removeItem(STORAGE_KEY_LOGS);
+    localStorage.removeItem(STORAGE_KEY_HIDDEN_PROGRAMS);
+    localStorage.removeItem(STORAGE_KEY_EXERCISE_IMAGES);
+    setProfiles(DEFAULT_PROFILES);
+    setActiveProfileId(DEFAULT_PROFILES[0].id);
+    setCustomPrograms([]);
+    setActiveProgramId('preset_enes_program');
+    setHiddenProgramIds([]);
+    setDailyDataMap({});
+    setLogsHistory([]);
+    setExerciseImages({});
     await logout();
   };
 
@@ -283,13 +339,23 @@ export default function App() {
       .then((data) => {
         if (cancelled) return;
         if (data) {
-          if (data.profiles) setProfiles(data.profiles);
-          if (data.activeProfileId) setActiveProfileId(data.activeProfileId);
-          if (data.customPrograms) setCustomPrograms(data.customPrograms);
-          if (data.activeProgramId) setActiveProgramId(data.activeProgramId);
-          if (data.hiddenProgramIds) setHiddenProgramIds(data.hiddenProgramIds);
-          if (data.dailyDataMap) setDailyDataMap(migrateDailyDataMap(data.dailyDataMap));
-          if (data.logsHistory) setLogsHistory(data.logsHistory);
+          setProfiles(data.profiles || DEFAULT_PROFILES);
+          setActiveProfileId(data.activeProfileId || DEFAULT_PROFILES[0].id);
+          setCustomPrograms(data.customPrograms || []);
+          setActiveProgramId(data.activeProgramId || 'preset_enes_program');
+          setHiddenProgramIds(data.hiddenProgramIds || []);
+          setDailyDataMap(data.dailyDataMap ? migrateDailyDataMap(data.dailyDataMap) : {});
+          setLogsHistory(data.logsHistory || []);
+          setExerciseImages(data.exerciseImages || {});
+        } else {
+          setProfiles(DEFAULT_PROFILES);
+          setActiveProfileId(DEFAULT_PROFILES[0].id);
+          setCustomPrograms([]);
+          setActiveProgramId('preset_enes_program');
+          setHiddenProgramIds([]);
+          setDailyDataMap({});
+          setLogsHistory([]);
+          setExerciseImages({});
         }
         hydratedRef.current = true;
       })
@@ -783,7 +849,7 @@ export default function App() {
 
   return (
     <div className="app-container">
-<header className="app-header">
+      <header className="app-header">
         <div className="app-title">LeaTracker</div>
         <div className="header-row">
           <button
@@ -801,23 +867,6 @@ export default function App() {
             >
               <Layers size={13} color="var(--primary)" />
               <span className="header-chip-text">{activeProgram.name.split('(')[0].trim()}</span>
-            </button>
-            <button
-              className="header-chip"
-              onClick={() => setIsProfileModalOpen(true)}
-              title="Profil"
-            >
-              <User size={13} color="var(--primary)" />
-              <span className="header-chip-text">{activeProfile.name}</span>
-            </button>
-            <button
-              className={`header-chip ${activeTab === 'ai' ? 'active' : ''}`}
-              onClick={() => setActiveTab('ai')}
-              title="AI Koç & Analiz"
-              style={activeTab === 'ai' ? { borderColor: '#9333EA', background: 'rgba(147, 51, 234, 0.15)' } : {}}
-            >
-              <Sparkles size={13} color="#C084FC" />
-              <span className="header-chip-text" style={{ color: activeTab === 'ai' ? '#C084FC' : undefined }}>AI Koç</span>
             </button>
           </div>
         </div>
@@ -898,6 +947,8 @@ export default function App() {
             workoutCompleted={!!currentDayData.workoutCompleted?.[activeProgram.id]?.completed}
             onAddExtraExercise={handleAddExtraExercise}
             onRemoveExtraExercise={handleRemoveExtraExercise}
+            exerciseImages={exerciseImages}
+            onUpdateExerciseImage={handleUpdateExerciseImage}
           />
         </>
       )}
@@ -1059,38 +1110,6 @@ export default function App() {
         />
       )}
 
-      <nav className="bottom-nav">
-        <button
-          className={`bottom-nav-item ${activeTab === 'workout' ? 'active' : ''}`}
-          onClick={() => setActiveTab('workout')}
-        >
-          <Dumbbell size={18} /> İdman
-        </button>
-        <button
-          className={`bottom-nav-item ${activeTab === 'nutrition' ? 'active' : ''}`}
-          onClick={() => setActiveTab('nutrition')}
-        >
-          <Utensils size={18} /> Beslenme
-        </button>
-        <button
-          className={`bottom-nav-item ${activeTab === 'weight' ? 'active' : ''}`}
-          onClick={() => setActiveTab('weight')}
-        >
-          <Scale size={18} /> Tartı
-        </button>
-        <button
-          className={`bottom-nav-item ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
-        >
-          <History size={18} /> Geçmiş
-        </button>
-        <button
-          className={`bottom-nav-item ${activeTab === 'ai' ? 'active' : ''}`}
-          onClick={() => setActiveTab('ai')}
-        >
-          <Sparkles size={18} color={activeTab === 'ai' ? '#C084FC' : undefined} /> AI Koç
-        </button>
-      </nav>
       <Toaster />
     </div>
   );
