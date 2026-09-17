@@ -1,5 +1,4 @@
 import React from 'react';
-import { Scale, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 
 export default function WeightChart({ weightLogs }) {
   if (!weightLogs || weightLogs.length === 0) {

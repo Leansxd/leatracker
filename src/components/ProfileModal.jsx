@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, User, Scale, Flame, Activity, Droplets, Sparkles, Plus, Trash2, CheckCircle2, ChevronRight, Award } from 'lucide-react';
+import { X, Save, User, Scale, Activity, Sparkles, Plus, CheckCircle2 } from 'lucide-react';
 import { calculateProfileRecommendations } from '../data/programPresets';
 
 export default function ProfileModal({

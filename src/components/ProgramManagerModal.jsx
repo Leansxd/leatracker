@@ -1,19 +1,23 @@
 import React, { useState, useRef } from 'react';
-import { X, Check, Plus, Trash2, Dumbbell, Sparkles, ChevronDown, ChevronUp, ChevronRight, Layers, BookOpen, AlertCircle, ArrowLeft } from 'lucide-react';
+import { X, Check, Plus, Trash2, Sparkles, ChevronDown, ChevronUp, ChevronRight, Layers, BookOpen, ArrowLeft, Pencil, RotateCcw } from 'lucide-react';
 import { PRESET_PROGRAMS } from '../data/programPresets';
 import { toast } from './Toaster';
 
 export default function ProgramManagerModal({
   activeProgramId,
   programs,
+  customPrograms = [],
+  hiddenProgramIds = [],
   onSelectProgram,
   onSaveCustomProgram,
   onDeleteCustomProgram,
   onDeletePresetProgram,
+  onRestorePresetPrograms,
   onClose
 }) {
   const [activeTab, setActiveTab] = useState('presets');
   const [expandedProgramId, setExpandedProgramId] = useState(null);
+  const [editingProgramId, setEditingProgramId] = useState(null);
 
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -56,8 +60,6 @@ export default function ProgramManagerModal({
   const [customName, setCustomName] = useState('');
   const [customDesc, setCustomDesc] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
-  const [editingDayIdx, setEditingDayIdx] = useState(null);
-  const [dayDeleteConfirm, setDayDeleteConfirm] = useState(false);
   const deleteConfirmTimerRef = useRef(null);
 
   const askDelete = (id) => {
@@ -217,8 +219,11 @@ export default function ProgramManagerModal({
 
     const trainingDaysCount = customDays.filter((d) => !d.isRest).length;
 
+    const isEditingExistingCustom = editingProgramId && customPrograms.some((p) => p.id === editingProgramId);
+    const savedId = isEditingExistingCustom ? editingProgramId : `custom_${Date.now()}`;
+
     const newProgram = {
-      id: `custom_${Date.now()}`,
+      id: savedId,
       name: customName.trim(),
       category: 'Özel Program',
       daysPerWeek: trainingDaysCount,
@@ -229,7 +234,105 @@ export default function ProgramManagerModal({
 
     onSaveCustomProgram(newProgram);
     onSelectProgram(newProgram.id);
+    setEditingProgramId(null);
+    toast(isEditingExistingCustom ? 'Program güncellendi.' : 'Özel program oluşturuldu ve seçildi.');
     onClose();
+  };
+
+  const handleStartEdit = (prog) => {
+    setEditingProgramId(prog.id);
+    setCustomName(prog.name || '');
+    setCustomDesc(prog.description || '');
+    const clonedDays = (prog.days || []).map((day, dIdx) => ({
+      id: day.id || `custom_d${Date.now()}_${dIdx}`,
+      dayName: day.dayName || `${dIdx + 1}. GÜN`,
+      title: day.title || '',
+      isRest: !!day.isRest,
+      focus: Array.isArray(day.focus) ? [...day.focus] : [],
+      tips: day.tips || '',
+      exercises: (day.exercises || []).map((ex, eIdx) => ({
+        id: ex.id || `ce_${Date.now()}_${dIdx}_${eIdx}`,
+        name: ex.name || '',
+        tag: ex.tag || 'Genel',
+        defaultSets: ex.defaultSets ?? 3,
+        targetReps: ex.targetReps ?? '8-10',
+        suggestedWeight: ex.suggestedWeight || '10 kg',
+        tips: ex.tips || ''
+      }))
+    }));
+    setCustomDays(clonedDays.length > 0 ? clonedDays : [
+      {
+        id: 'custom_d1',
+        dayName: '1. GÜN',
+        title: 'Antrenman Günü',
+        isRest: false,
+        focus: ['Genel'],
+        exercises: [
+          {
+            id: 'ce_1',
+            name: 'Bench Press',
+            tag: 'Göğüs',
+            defaultSets: 3,
+            targetReps: '8-10',
+            suggestedWeight: '10 kg',
+            tips: ''
+          }
+        ]
+      }
+    ]);
+    setActiveTab('custom');
+  };
+
+  const handleSwitchToNewCustom = () => {
+    setEditingProgramId(null);
+    setCustomName('');
+    setCustomDesc('');
+    setCustomDays([
+      {
+        id: 'custom_d1',
+        dayName: '1. GÜN',
+        title: 'İtiş Günü (Göğüs & Omuz)',
+        isRest: false,
+        focus: ['Göğüs', 'Omuz'],
+        exercises: [
+          {
+            id: 'ce_1_1',
+            name: 'Dumbbell Bench Press',
+            tag: 'Göğüs',
+            defaultSets: 3,
+            targetReps: '8-10',
+            suggestedWeight: '12 kg',
+            tips: 'Kontrollü indirin ve göğsü sıkın.'
+          }
+        ]
+      },
+      {
+        id: 'custom_d2',
+        dayName: '2. GÜN',
+        title: 'Çekiş Günü (Sırt & Biceps)',
+        isRest: false,
+        focus: ['Sırt', 'Biceps'],
+        exercises: [
+          {
+            id: 'ce_2_1',
+            name: 'Lat Pulldown',
+            tag: 'Sırt',
+            defaultSets: 3,
+            targetReps: '8-10',
+            suggestedWeight: 'Orta Ağırlık',
+            tips: 'Dirsekleri aşağı çekerek kanatları sıkın.'
+          }
+        ]
+      },
+      {
+        id: 'custom_d3',
+        dayName: '3. GÜN',
+        title: 'Dinlenme & Yenilenme',
+        isRest: true,
+        tips: 'Kas onarımı için dinlenme günü.'
+      }
+    ]);
+    setActiveTab('custom');
   };
 
   return (
@@ -277,12 +380,12 @@ export default function ProgramManagerModal({
             }}
           >
             <BookOpen size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} />
-            Hazır Programlar ({PRESET_PROGRAMS.length})
+            Programlar ({allPrograms.length})
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab('custom')}
+            onClick={handleSwitchToNewCustom}
             style={{
               flex: 1,
               padding: '8px',
@@ -298,7 +401,7 @@ export default function ProgramManagerModal({
             }}
           >
             <Plus size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} />
-            Manuel Özel Program Ekle
+            {editingProgramId ? 'Programı Düzenle' : 'Manuel Özel Program Ekle'}
           </button>
         </div>
 
@@ -408,37 +511,42 @@ export default function ProgramManagerModal({
                         </div>
                       ) : (
                         <>
-                          {prog.isCustom ? (
-                            <button
-                              type="button"
-                              onClick={() => askDelete(prog.id)}
-                              title={`"${prog.name}" programını sil`}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#EF4444',
-                                cursor: 'pointer',
-                                padding: '6px'
-                              }}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => askDelete(prog.id)}
-                              title={`"${prog.name}" hazır programını kaldır`}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#6E7683',
-                                cursor: 'pointer',
-                                padding: '6px'
-                              }}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleStartEdit(prog)}
+                            title={`"${prog.name}" programını düzenle`}
+                            style={{
+                              background: 'var(--surface-alt)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'var(--text-main)',
+                              borderRadius: '8px',
+                              padding: '6px 8px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700
+                            }}
+                          >
+                            <Pencil size={13} color="#3B82F6" />
+                            <span>Düzenle</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => askDelete(prog.id)}
+                            title={prog.isCustom ? `"${prog.name}" programını sil` : `"${prog.name}" hazır programını kaldır`}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: prog.isCustom ? '#EF4444' : '#6E7683',
+                              cursor: 'pointer',
+                              padding: '6px'
+                            }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
 
                           {!isActive ? (
                             <button
@@ -524,12 +632,57 @@ export default function ProgramManagerModal({
                 </div>
               );
             })}
+            {hiddenProgramIds && hiddenProgramIds.length > 0 && (
+              <div style={{ marginTop: '8px', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  onClick={onRestorePresetPrograms}
+                  style={{
+                    background: 'var(--surface-alt)',
+                    border: '1px dashed var(--border)',
+                    color: '#60A5FA',
+                    borderRadius: '8px',
+                    padding: '8px 14px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <RotateCcw size={14} />
+                  Kaldırılan Hazır Programları Geri Getir ({hiddenProgramIds.length})
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'custom' && (
           <>
             <form onSubmit={handleSaveCustom} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {editingProgramId && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                <span style={{ fontSize: '0.75rem', color: '#60A5FA', fontWeight: 700 }}>
+                  Mevcut Programı Düzenliyorsunuz
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSwitchToNewCustom}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-sub)',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  Yeni Olarak Sıfırla
+                </button>
+              </div>
+            )}
             <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)' }}>
               <label style={{ fontSize: '0.78rem', color: 'var(--text-sub)', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
                 Program Adı *
@@ -627,7 +780,7 @@ export default function ProgramManagerModal({
                 boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
               }}
             >
-              <Sparkles size={16} /> PROGRAMI KAYDET & KULLAN
+              <Sparkles size={16} /> {editingProgramId ? 'DEĞİŞİKLİKLERİ KAYDET' : 'PROGRAMI KAYDET & KULLAN'}
             </button>
           </form>
 

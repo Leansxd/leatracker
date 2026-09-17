@@ -603,7 +603,8 @@ export default function App() {
       profiles,
       activeProfileId,
       customPrograms,
-      activeProgramId
+      activeProgramId,
+      hiddenProgramIds
     ]
   );
 
@@ -755,6 +756,11 @@ export default function App() {
       if (fallback) setActiveProgramId(fallback.id);
     }
     if (prog) toast(`🗑️ "${prog.name}" standart programı kaldırıldı.`);
+  };
+
+  const handleRestorePresetPrograms = () => {
+    setHiddenProgramIds([]);
+    toast('🔄 Tüm hazır programlar geri yüklendi.');
   };
 
   const handleApplyRecommendedProgram = (recProgramId) => {
@@ -1043,10 +1049,12 @@ export default function App() {
           activeProgramId={activeProgramId}
           customPrograms={customPrograms}
           programs={allPrograms}
+          hiddenProgramIds={hiddenProgramIds}
           onSelectProgram={setActiveProgramId}
           onSaveCustomProgram={handleSaveCustomProgram}
           onDeleteCustomProgram={handleDeleteCustomProgram}
           onDeletePresetProgram={handleDeletePresetProgram}
+          onRestorePresetPrograms={handleRestorePresetPrograms}
           onClose={() => setIsProgramModalOpen(false)}
         />
       )}

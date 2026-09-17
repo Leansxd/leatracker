@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, Trash2, Key, Sparkles, Bot } from 'lucide-react';
+import { Send, Trash2, Key, Sparkles, Bot } from 'lucide-react';
 import { askAiCoach } from '../services/aiService';
 
 const renderFormattedMarkdown = (text) => {
@@ -97,7 +97,6 @@ const renderFormattedMarkdown = (text) => {
 export default function AIAnalyticsView({
   profile,
   logsHistory = [],
-  dailyDataMap = {},
   selectedDate,
   currentDayData,
   activeProgram

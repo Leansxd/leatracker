@@ -1,36 +1,3 @@
-export const INITIAL_PROFILE = {
-  height: 173,
-  weight: 67,
-  week: 1,
-  equipment: "Dambıl, Kablo & Makine",
-  targetCalories: 2550,
-  targetProtein: 130,
-  targetWater: 3.0
-};
-
-export const INITIAL_GUIDE = [
-  {
-    id: 1,
-    title: "İtiş & Çekiş Denge Prensibi",
-    desc: "Göğüs, sırt ve kol odaklı bu programda itiş ve çekiş kasları eşit hacimde uyarılır. Ağırlıkları kontrollü indirip patlayıcı kaldırın."
-  },
-  {
-    id: 2,
-    title: "Üst Göğüs ve Sırt Önceliği",
-    desc: "Haftanın iki günü üst göğüs ve sırt uyarılır. Doğru açıyı korumak için sehpa açısını 30 derecede tutun ve kürek kemiklerini sabitleyin."
-  },
-  {
-    id: 3,
-    title: "Kol Gelişimi & İzolasyon",
-    desc: "Cuma günkü kol seansında dirsekleri gövdeden ayırmadan biceps tepe noktası ve triceps uzun başını izole edin."
-  },
-  {
-    id: 4,
-    title: "Beslenme & Toparlanma",
-    desc: "Hedeflenen 130g protein ve 2550 kaloriyi eksiksiz alarak dinlenme günlerinde kas onarımını maksimize edin."
-  }
-];
-
 export const WORKOUT_DAYS = [
   {
     id: "day1",

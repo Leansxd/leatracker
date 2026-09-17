@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Droplets, Flame, Activity, CheckSquare, Square, Plus, Minus, Utensils, Trash2 } from 'lucide-react';
+import { Droplets, Flame, Activity, CheckSquare, Square, Plus, Minus, Trash2 } from 'lucide-react';
 import AddFoodModal from './AddFoodModal';
 
 export default function DailyMacroTracker({ dailyLog, onUpdateDailyLog, profile }) {

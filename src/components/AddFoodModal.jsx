@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Utensils, Search, Zap } from 'lucide-react';
+import { X, Plus, Utensils, Search } from 'lucide-react';
 import { NUTRITION_PRESETS, MEAL_TYPES } from '../data/nutritionPresets';
 
 export default function AddFoodModal({ onAddFood, onClose }) {
@@ -7,7 +7,7 @@ export default function AddFoodModal({ onAddFood, onClose }) {
   const [foodName, setFoodName] = useState('');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
-  const [portion, setPortion] = useState('1 porsiyon');
+  const [portion] = useState('1 porsiyon');
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSelectPreset = (item) => {
@@ -47,7 +47,6 @@ export default function AddFoodModal({ onAddFood, onClose }) {
           </button>
         </div>
 
-        {/* Öğün Türü Seçici */}
         <div style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '0.78rem', color: '#A1A7B3', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
             ÖĞÜN SEÇİMİ
@@ -75,7 +74,6 @@ export default function AddFoodModal({ onAddFood, onClose }) {
           </div>
         </div>
 
-        {/* Hızlı Seçim Listesi */}
         <div style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '0.78rem', color: '#A1A7B3', fontWeight: 700, display: 'flex', alignItems: 'center', justifyBetween: 'space-between', gap: '6px', marginBottom: '6px' }}>
             <span>⚡ HIZLI SEÇİM (HAZIR BESİNLER)</span>
@@ -118,7 +116,6 @@ export default function AddFoodModal({ onAddFood, onClose }) {
           </div>
         </div>
 
-        {/* Manuel/Seçilen Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
             <label style={{ fontSize: '0.78rem', color: '#A1A7B3', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
